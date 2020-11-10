@@ -1,6 +1,6 @@
-import UIBase from "./ui-base";
+import UIFragment from "./ui-base";
 
-export default class Text extends UIBase {
+export default class Text extends UIFragment {
     text: string = '';
 
     setText(text: string) {

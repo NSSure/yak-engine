@@ -1,5 +1,5 @@
 import Primitive from "../primitives/primitive";
-import UIBase from "../ui/ui-base";
+import UIFragment from "../ui/ui-base";
 
 /**
  * Contains the fragments to be rendered to the canvas on each iteration
@@ -9,6 +9,6 @@ import UIBase from "../ui/ui-base";
  * @since 11/9/2020
  */
 export default class Fragments {
-    uiFragments: Array<UIBase> = new Array();
+    uiFragments: Array<UIFragment> = new Array();
     primitiveFragments: Array<Primitive> = new Array();
 }

@@ -2,7 +2,7 @@ import Entity from "../entity";
 import HoverState from "./states/hover-state";
 import Thickness from "./thickness";
 
-interface UIBase {
+interface UIFragment {
     onHover?(): void;
     onEnter?(): void;
     onExit?(): void;
@@ -10,7 +10,7 @@ interface UIBase {
     onKeypress?(): void;
 }
 
-abstract class UIBase extends Entity {
+abstract class UIFragment extends Entity {
     backgroundColor: string = 'transparent';
     padding: Thickness = new Thickness();
     margin: Thickness = new Thickness();
@@ -30,4 +30,4 @@ abstract class UIBase extends Entity {
     }
 }
 
-export default UIBase;
+export default UIFragment;

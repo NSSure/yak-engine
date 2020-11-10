@@ -1,5 +1,5 @@
 import Application from "../application";
-import UIBase from "../ui/ui-base";
+import UIFragment from "../ui/ui-base";
 import HtmlOverlay from "./html-overlay";
 import { OverlayPosition } from "./overlay-position";
 
@@ -17,7 +17,7 @@ export default class UIFragmentsOverlay extends HtmlOverlay {
     }
 
     sync(): void {
-        Application.instance.graphics.canvas.fragments.uiFragments.forEach((uiFragment: UIBase) => {
+        Application.instance.graphics.canvas.fragments.uiFragments.forEach((uiFragment: UIFragment) => {
             if (!this.ul.querySelector('li')) {
                 let li = <HTMLLIElement>document.createElement('li');
                 li.id = `ui-fragment-${uiFragment.id}`;

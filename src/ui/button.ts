@@ -1,12 +1,6 @@
-import { Logger } from "../logging/logger";
-import UIBase from "./ui-base";
+import UIFragment from "./ui-base";
 
-export default class Button extends UIBase {
+export default class Button extends UIFragment {
     isInteractive: boolean = true;
-
     text: string = '';
-
-    onHover(): void {
-        Logger.debug(`Entity: ${this.id} is being hovered.`);
-    }
 }

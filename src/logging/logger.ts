@@ -10,11 +10,11 @@ class Logger {
     static threshold: LogThreshold = LogThreshold.DEBUG;
 
     static debug(msg: string): void {
-        if (this.threshold < LogThreshold.DEBUG) {
+        if (this.threshold != LogThreshold.DEBUG) {
             return;
         }
 
-        console.debug(`[DEBUG]: ${msg}`);
+        console.log(`[DEBUG]: ${msg}`);
     }
 
     static info(msg: string): void {

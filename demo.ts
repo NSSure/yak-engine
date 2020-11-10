@@ -1,4 +1,5 @@
 import Application from "./src/application";
+import { Logger } from "./src/logging/logger";
 import EngineStatsOverlay from "./src/overlays/engine-stats-overlay";
 import UIFragmentsOverlay from "./src/overlays/ui-fragments-overlay";
 import Button from "./src/ui/button";
@@ -13,6 +14,14 @@ export default class Demo extends Application {
         this.instance.configuration.htmlOverlays.push(new UIFragmentsOverlay());
 
         let button = new Button((this.instance.graphics.canvas.getCanvasWidth() / 2) - 100, this.instance.graphics.canvas.getCanvasHeight() / 2, 200, 50);
+
+        button.onHover = () => {
+            Logger.debug(`Entity: ${button.id} is being hovered.`);
+        }
+    
+        button.onClick = () => {
+            Logger.debug(`Entity: ${button.id} was just clicked.`);
+        }
         
         button.text = 'Start game';
         button.backgroundColor = '#282828';

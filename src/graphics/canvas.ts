@@ -3,19 +3,25 @@ import isCoordinateContained from "../helpers/is-coordinate-contained";
 import { Logger } from "../logging/logger";
 import Point from "../primitives/Point";
 import Button from "../ui/button";
-import UIBase from "../ui/ui-base";
+import UIFragment from "../ui/ui-base";
+import UIFragmentsRenderer from "../ui/ui-fragments-renderer";
 import Fragments from "./fragments";
 
 export default class Canvas {
     /**
      * The canvas located within the default index.html document.
      */
-    public engineCanvas: HTMLCanvasElement;
+    public engineCanvas: HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#engine-canvas');
 
     /**
      * The 2D rendering context for the default canvas.
      */
-    public context: CanvasRenderingContext2D;
+    public context: CanvasRenderingContext2D = <CanvasRenderingContext2D>this.engineCanvas.getContext('2d');
+
+    /**
+     * The renderer that handle drawing the UI fragments to the given canvas context.
+     */
+    public uiFragmentsRender: UIFragmentsRenderer = new UIFragmentsRenderer(this);
 
     /**
      * The current position of the mouse in relation to the canvas. NOT the document.
@@ -29,22 +35,9 @@ export default class Canvas {
      * and bootstraps the canvas events.
      */
     constructor() {
-        this.engineCanvas = <HTMLCanvasElement>document.querySelector('#engine-canvas');
-        this.context = <CanvasRenderingContext2D>this.engineCanvas.getContext('2d');
-
         // Ensure we resize the canvas here.
         this.resizeCanvas();
 
-        this.bootstrapCanvasEvents();
-    }
-
-    /**
-     * Configures events attached directly to the the canvas.
-     * 
-     * @author NSSure
-     * @since 11/8/2020
-     */
-    bootstrapCanvasEvents(): void {
         this.engineCanvas.addEventListener('keydown', (event: KeyboardEvent) => {
             console.log(event);
         });
@@ -69,8 +62,7 @@ export default class Canvas {
         this.context.fillStyle = '#484848';
         this.context.fillRect(0, 0, this.getCanvasWidth(), this.getCanvasHeight());
 
-        this.drawUIFragments();
-        this.iterateFragments();
+        this.uiFragmentsRender.run();
 
         this.resizeCanvas();
     }
@@ -98,61 +90,11 @@ export default class Canvas {
         }
     }
 
-    iterateFragments(): void {
-        this.fragments.uiFragments.forEach((uiFragment: UIBase) => {
-            // If the fragment is not interactive simply check the position check.
-            if (uiFragment.isInteractive) {
-                if (isCoordinateContained(this.mousePosition, uiFragment.transform)) {
-                    uiFragment.isHovered = true;
-                    
-                    if (uiFragment.onHover) {
-                        uiFragment?.onHover();
-                    }
-                }
-                else if (uiFragment.isHovered) {
-                    uiFragment.isHovered = false;
-                }
-            }
-        });
-    }
-
     drawText(): void {
         this.context.font = '30px Arial';
         this.context.fillStyle = 'red';
         this.context.textAlign = 'center';
         this.context.fillText('Hello world', 100, 100);
-    }
-
-    drawUIFragments(): void {
-        this.fragments.uiFragments.forEach((uiFragment: UIBase) => {
-            if (uiFragment.isEnabled) {
-                this.context.beginPath();
-
-                if (uiFragment.isHovered && uiFragment.hoverState) {
-                    this.context.fillStyle = <string>uiFragment.hoverState.backgroundColor;
-                }
-                else {
-                    this.context.fillStyle = uiFragment.backgroundColor;
-                }
-
-                this.context.fillRect(uiFragment.transform.x, uiFragment.transform.y, uiFragment.transform.width, uiFragment.transform.height);
-                this.context.closePath(); 
-
-                switch(uiFragment.constructor.name) {
-                    case uiConstants.entityName.button:
-                        this.context.font = '16px Arial';
-                        this.context.fillStyle = 'white';
-                        this.context.textAlign = 'center';
-                        this.context.textBaseline = 'middle';
-                        let x = uiFragment.transform.x + (uiFragment.transform.width / 2);
-                        let y = uiFragment.transform.y + (uiFragment.transform.height / 2);
-                        this.context.fillText((<Button>uiFragment).text, x, y);
-                        break;
-                    default:
-                        break;
-                }
-            }
-        });
     }
 
     getCanvasHeight(): number {
@@ -172,7 +114,7 @@ export default class Canvas {
     }
 
     onCanvasClick(event: MouseEvent): void {
-
+        this.uiFragmentsRender.isHoveredFragmentClicked(this.mousePosition);
     }
 
     onCanvasHover(event: MouseEvent): void {
