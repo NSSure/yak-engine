@@ -1,4 +1,5 @@
 import { uiConstants } from "../constants";
+import currentViewportGridSquare from "../helpers/current-viewport-grid-square";
 import isCoordinateContained from "../helpers/is-coordinate-contained";
 import { Logger } from "../logging/logger";
 import Point from "../primitives/Point";
@@ -6,6 +7,7 @@ import Button from "../ui/button";
 import UIFragment from "../ui/ui-base";
 import UIFragmentsRenderer from "../ui/ui-fragments-renderer";
 import Fragments from "./fragments";
+import SpriteRenderer from "./sprite-renderer";
 
 export default class Canvas {
     /**
@@ -23,10 +25,12 @@ export default class Canvas {
      */
     public uiFragmentsRender: UIFragmentsRenderer = new UIFragmentsRenderer(this);
 
+    public spriteRenderer: SpriteRenderer = new SpriteRenderer(this);
+
     /**
      * The current position of the mouse in relation to the canvas. NOT the document.
      */
-    public mousePosition: any = new Point(0, 0);
+    public mousePosition: Point = new Point(0, 0);
 
     public fragments: Fragments = new Fragments();
 
@@ -46,6 +50,12 @@ export default class Canvas {
         this.engineCanvas.addEventListener('mousemove', (event) => this.onCanvasHover(event));
         this.engineCanvas.addEventListener('mouseenter', (event) => this.onCanvasEnter(event));
         this.engineCanvas.addEventListener('mouseleave', (event) => this.onCanvasLeave(event));
+
+        document.addEventListener('mouseup', (event) => 
+        {
+            console.log(event.target);
+            Logger.debug('canvas mouse up');
+        });
     }
 
     /**
@@ -63,6 +73,7 @@ export default class Canvas {
         this.context.fillRect(0, 0, this.getCanvasWidth(), this.getCanvasHeight());
 
         this.uiFragmentsRender.run();
+        // this.spriteRenderer.run();
 
         this.resizeCanvas();
     }
@@ -115,13 +126,22 @@ export default class Canvas {
 
     onCanvasClick(event: MouseEvent): void {
         this.uiFragmentsRender.isHoveredFragmentClicked(this.mousePosition);
+
+        // TODO: Move this to a better place.
+
     }
 
     onCanvasHover(event: MouseEvent): void {
-        this.mousePosition = { x: event.clientX, y: event.clientY };
+        this.mousePosition = new Point(event.clientX, event.clientY);
+
+        let gridPosition = currentViewportGridSquare(this.mousePosition); 
+        this.context.fillStyle = 'red';
+        Logger.data(gridPosition.x * 16);
+        Logger.data(gridPosition.y * 16);
+        this.context.fillRect(gridPosition.x * 16, gridPosition.y * 16, 16, 16);
 
         // Determines fragment hovers.
-
+        // this.context.fillRect(this.mousePosition.)
     }
 
     onCanvasEnter(event: MouseEvent): void {
