@@ -15,8 +15,8 @@ import Transform from "../primitives/transform";
  * @param containerHeight The height of the container.
  */
 export default function isCoordinateContained(point: Point, containerTransform: Transform) {
-    if (point.x > containerTransform.x && (point.x < (containerTransform.x + containerTransform.width))) {
-        if (point.y > containerTransform.y && (point.y < (containerTransform.y + containerTransform.height))) {
+    if (point.x >= containerTransform.x && (point.x <= (containerTransform.x + containerTransform.width))) {
+        if (point.y >= containerTransform.y && (point.y <= (containerTransform.y + containerTransform.height))) {
             return true;
         }
     }

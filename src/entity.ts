@@ -1,7 +1,7 @@
 import Transform from "./primitives/transform";
 
 /**
- * Base object class used for colliders, primitives, etc. Contains
+ * Base object class used for sprites, colliders, primitives, etc. Contains
  * shared code common across most classes.
  * 
  * @author NSSure

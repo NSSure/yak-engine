@@ -1,8 +1,13 @@
 import Application from "../application";
+import { HtmlOverlayDecorator } from "../decorators/html-overlay-decorator";
 import UIFragment from "../ui/ui-base";
 import HtmlOverlay from "./html-overlay";
 import { OverlayPosition } from "./overlay-position";
 
+@HtmlOverlayDecorator({
+    name: 'ui-fragments',
+    template: `<ul></ul>`
+})
 export default class UIFragmentsOverlay extends HtmlOverlay {
     title: string = 'UI Fragments';
     order: number = 1;
@@ -10,10 +15,10 @@ export default class UIFragmentsOverlay extends HtmlOverlay {
     overlayPosition = OverlayPosition.TOP_RIGHT;
     isMoveable: boolean = true;
 
-    ul: HTMLUListElement = document.createElement('ul');
+    ul: HTMLUListElement;
 
     bootstrap(): void {
-        this.content?.appendChild(this.ul);
+        this.ul = this.content!.querySelector('ul');
     }
 
     sync(): void {

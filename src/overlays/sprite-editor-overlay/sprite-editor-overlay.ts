@@ -1,10 +1,14 @@
-import Application from "../application";
-import isCanvasBlank from "../helpers/is-canvas-empty";
-import { Logger } from "../logging/logger";
-import Time from "../time";
-import HtmlOverlay from "./html-overlay";
-import { OverlayPosition } from "./overlay-position";
+import Application from "../../application";
+import isCanvasBlank from "../../helpers/is-canvas-empty";
+import HtmlOverlay from "../html-overlay";
+import { OverlayPosition } from "../overlay-position";
+import { HtmlOverlayDecorator } from '../../decorators/html-overlay-decorator';
+import Sprite from "../../graphics/sprite";
 
+@HtmlOverlayDecorator({
+    name: 'sprite-editor',
+    templateUrl: './overlays/src/overlays/sprite-editor-overlay/sprite-editor-overlay-template.html',
+})
 export default class SpriteEditorOverlay extends HtmlOverlay {
     title: string = 'Sprite Editor';
     order: number = 0;
@@ -12,29 +16,8 @@ export default class SpriteEditorOverlay extends HtmlOverlay {
     overlayPosition = OverlayPosition.TOP_LEFT;
     isMoveable: boolean = true;
 
-    template: string = 
-    `
-        <input type="text" id="tileset-path" value="/images/tileset.png" />
-        <button type="button" id="btn-load-tileset">Load tileset</button>
-        <span class="error-msg" style="display: none;"></span>
-        <div id="tileset-dimensions" style="display: none;">
-            <input type="text" id="pixel-size-x" placeholder="Pixel size x" value="16" />
-            <input type="text" id="pixel-size-y" placeholder="Pixel size y" value="16" />
-            <input type="text" id="pixel-scaler" placeholder="Pixel scaler" value="2" />
-            <button type="button" id="btn-slice">Slice</button>
-            <ul id="sprite-list">
-            </ul>
-        </div>
-    `;
-
     // This will be fired after the init function is fired.
     bootstrap() {
-        this.container.classList.add('sprite-editor-overlay');
-
-        let div = document.createElement('div');
-        div.innerHTML = this.template;
-        this.content?.appendChild(div);
-
         let btnLoadTileset = <HTMLButtonElement>document.querySelector('#btn-load-tileset');
         let btnSlice = <HTMLButtonElement>document.querySelector('#btn-slice');
         let tilesetPath = <HTMLInputElement>document.querySelector('#tileset-path');
@@ -43,15 +26,12 @@ export default class SpriteEditorOverlay extends HtmlOverlay {
 
         if (btnLoadTileset) {
             btnLoadTileset.addEventListener('click', (event) => {
-                Logger.debug('clicked');
-
                 tileset.onload = () => {
                     (<HTMLDivElement>document.querySelector('#tileset-dimensions')).style.display = 'inherit';
                     btnSlice.click();
                 }
         
                 tileset.onerror = () => {
-                    Logger.debug('errored');
                     let errorMsg = <HTMLSpanElement>this.content.querySelector('.error-msg');
                     errorMsg.style.display = 'inherit';
                     errorMsg.textContent = 'Failed to load tileset';
@@ -87,26 +67,40 @@ export default class SpriteEditorOverlay extends HtmlOverlay {
                             canvas.getContext('2d')?.drawImage(tileset, pixelSizeX * column, pixelSizeY * row, pixelSizeX, pixelSizeY, 0, 0, 16 * pixelScaler, 16 * pixelScaler);
 
                             if (!isCanvasBlank(canvas)) {
-                                if (row === 13 && column === 1) {
-                                    Logger.data(canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
-                                    Logger.debug(canvas.toDataURL());
-                                }
-
                                 let li = document.createElement('li');
                                 let spriteImg = document.createElement('img');
                                 li.setAttribute('data-sprite-row', row.toString());
                                 li.setAttribute('data-sprite-column', column.toString());
 
                                 spriteImg.addEventListener('click', (event) => {
-                                    Logger.debug('sprite clicked');
+                                    event.stopImmediatePropagation();
+                                    event.preventDefault();
+
+                                    let prev = this.content.querySelector('ul li img.pending-sprite');
+                                    
+                                    if (prev) {
+                                        prev.classList.remove('pending-sprite');
+                                    }
+
+                                    spriteImg.classList.add('pending-sprite');
+
+                                    let { spriteRow, spriteColumn } = (<HTMLLIElement>event.target).dataset;
+                                    let sprite = new Sprite();
+                                    sprite.imageData = canvas.toDataURL();
+                                    Application.instance.stateManager.commit<any>('pending-sprite', sprite);
+
+                                    // sprite.x = Application.instance.graphics.canvas.mousePosition.x;
+                                    // sprite.y = Application.instance.graphics.canvas.mousePosition.y;
+                                    // sprite.width = 16;
+                                    // sprite.height = 16;
+                                    // sprite.enabled = true;
+                                    // sprite.order = 0;
+                                    // sprite.layer = 0;
                                 })
 
                                 spriteImg.src = canvas.toDataURL();
                                 li.appendChild(spriteImg);
                                 spriteList!.appendChild(li);
-                            }
-                            else {
-                                Logger.debug('image sprite square');
                             }
                         }
                     }

@@ -1,0 +1,30 @@
+<div class="overlay-template">
+   <div class="control-group">
+        <input type="text" id="tileset-path" value="/images/tileset.png" />
+        <button type="button" id="btn-load-tileset">Load tileset</button>
+   </div>
+   <span class="error-msg" style="display: none;"></span>
+   <div id="tileset-dimensions" style="display: none;">
+        <div class="control-group">
+            <div class="pixel-dimensions">
+                <div>
+                    <span>Width</span>
+                    <input type="text" id="pixel-size-x" placeholder="Pixel size x" value="16" />
+                </div>
+                <div>
+                    <span>Height</span>
+                    <input type="text" id="pixel-size-y" placeholder="Pixel size y" value="16" />
+                </div>
+                <div>
+                    <span>Scaler</span>
+                    <input type="text" id="pixel-scaler" placeholder="Pixel scaler" value="1" />
+                </div>
+            </div>   
+           
+           <button type="button" id="btn-slice">Slice</button>
+        </div>
+
+       <ul id="sprite-list">
+       </ul>
+   </div>
+</div>

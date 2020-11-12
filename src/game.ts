@@ -1,11 +1,13 @@
 import Configuration from "./configuration";
 import Graphics from "./graphics/graphics";
 import HtmlOverlayUtility from "./overlays/html-overlay-utility";
+import StateManager from "./state/state-manager";
 import Time from "./time";
 
 export default class Game {
     configuration: Configuration = new Configuration();
     graphics: Graphics = new Graphics();
+    stateManager: StateManager = new StateManager();
 
     /**
      * Actually begins the game instance. Processes the configuration.

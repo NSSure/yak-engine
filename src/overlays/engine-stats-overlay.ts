@@ -1,9 +1,19 @@
 import Application from "../application";
+import { HtmlOverlayConfig, HtmlOverlayDecorator } from "../decorators/html-overlay-decorator";
 import { Logger } from "../logging/logger";
 import Time from "../time";
 import HtmlOverlay from "./html-overlay";
 import { OverlayPosition } from "./overlay-position";
 
+@HtmlOverlayDecorator({
+    name: 'engine-stats',
+    template: 
+    `
+        <span class="canvas-dimensions">Canvas dimensions: <span data-canvas-dimensions>{width} x {height}</span></span><br>
+        <span class="mouse-position">Mouse position: <span data-mouse-position>{mouseX} x {mouseY}</span></span><br>
+        <span class="fps">FPS: <span data-fps>{fps}</span></span><br>
+    `
+})
 export default class EngineStatsOverlay extends HtmlOverlay {
     title: string = 'Engine Statistics';
     order: number = 0;
@@ -15,18 +25,9 @@ export default class EngineStatsOverlay extends HtmlOverlay {
         { key: 'data-fps', value: Time.deltaTime }
     ];
 
-    template: string = 
-    `
-        <span class="canvas-dimensions">Canvas dimensions: <span data-canvas-dimensions>{width} x {height}</span></span><br>
-        <span class="mouse-position">Mouse position: <span data-mouse-position>{mouseX} x {mouseY}</span></span><br>
-        <span class="fps">FPS: <span data-fps>{fps}</span></span><br>
-    `;
-
     // This will be fired after the init function is fired.
     bootstrap() {
-        let div = document.createElement('div');
-        div.innerHTML = this.template;
-        this.content?.appendChild(div);
+
     }
 
     sync() {

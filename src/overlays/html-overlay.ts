@@ -1,5 +1,6 @@
 import Application from "../application";
 import { MouseQuadrant } from "../enums/MouseQuadrant";
+import { Logger } from "../logging/logger";
 import { OverlayPosition } from "./overlay-position";
 
 export default abstract class HtmlOverlay {
@@ -8,6 +9,8 @@ export default abstract class HtmlOverlay {
     public content: HTMLDivElement = <HTMLDivElement>document.createElement('div');
 
     public isInSnapZone: boolean = false;
+
+    public template: string;
 
     abstract title: string = '';
     abstract order: number = 0;
@@ -27,6 +30,26 @@ export default abstract class HtmlOverlay {
             return;
         }
 
+        if (this.constructor.prototype.templateUrl) {
+            fetch(this.constructor.prototype.templateUrl).then(response => response.text()).then(templateMarkup => {
+                this.template = templateMarkup;
+                this._init();
+            }).catch((error) => {
+                Logger.error(error);
+            });
+        }
+        else if (this.constructor.prototype.template) {
+            this.template = this.constructor.prototype.template;
+            this._init();
+        }
+        else {
+            throw "You must provide either a literal template or a template url.";
+        }
+
+
+    }
+
+    private _init(): void {
         this.container.classList.add('overlay-container');
         this.container.style.position = 'absolute';
 
@@ -35,7 +58,9 @@ export default abstract class HtmlOverlay {
         title.innerText = this.title;
         this.header.appendChild(title);
 
+        this.container.classList.add(this.constructor.prototype.name);
         this.content.classList.add('overlay-content');
+        this.content.innerHTML = this.template;
 
         this.processOverlayPosition();
 

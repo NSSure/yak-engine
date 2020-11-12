@@ -1,12 +1,10 @@
-import { uiConstants } from "../constants";
-import currentViewportGridSquare from "../helpers/current-viewport-grid-square";
+import Application from "../application";
 import isCoordinateContained from "../helpers/is-coordinate-contained";
 import { Logger } from "../logging/logger";
 import Point from "../primitives/Point";
-import Button from "../ui/button";
-import UIFragment from "../ui/ui-base";
 import UIFragmentsRenderer from "../ui/ui-fragments-renderer";
 import Fragments from "./fragments";
+import Sprite from "./sprite";
 import SpriteRenderer from "./sprite-renderer";
 
 export default class Canvas {
@@ -34,6 +32,10 @@ export default class Canvas {
 
     public fragments: Fragments = new Fragments();
 
+    public isContextMenuOpen: boolean = false;
+
+    public currentContextMenu: HTMLDivElement;
+
     /**
      * Default constructor. Queries the canvas together with the canvas context
      * and bootstraps the canvas events.
@@ -51,11 +53,41 @@ export default class Canvas {
         this.engineCanvas.addEventListener('mouseenter', (event) => this.onCanvasEnter(event));
         this.engineCanvas.addEventListener('mouseleave', (event) => this.onCanvasLeave(event));
 
-        document.addEventListener('mouseup', (event) => 
-        {
-            console.log(event.target);
-            Logger.debug('canvas mouse up');
+        fetch('./maps/sample-sprite-map.json').then((response) => response.json()).then((map) => {
+            Logger.data(map);
+            
+            this.fragments.spriteFragments = this.fragments.spriteFragments.concat(map);
         });
+
+        // TODO: Move this it should not be here.
+        this.engineCanvas.oncontextmenu = (event) => {
+            event.preventDefault();
+
+            this.fragments.spriteFragments.some((sprite: Sprite) => {
+                if (isCoordinateContained(this.mousePosition, sprite.transform)) {
+                    event.preventDefault();
+
+                    if (this.isContextMenuOpen) {
+                        return;
+                    }
+
+                    Application.instance.stateManager.delete('pending-sprite');
+
+                    this.isContextMenuOpen = true;
+
+                    this.currentContextMenu = document.createElement('div');
+
+                    this.currentContextMenu.classList.add('engine-context-menu');
+                    this.currentContextMenu.style.position = 'absolute';
+                    this.currentContextMenu.style.top = `${sprite.transform.y + 16}px`;
+                    this.currentContextMenu.style.left = `${sprite.transform.x + 16}px`;
+
+                    this.currentContextMenu.innerHTML = Application.contextMenuTemplate;
+
+                    document.body.appendChild(this.currentContextMenu);
+                }
+            });
+        }
     }
 
     /**
@@ -69,11 +101,16 @@ export default class Canvas {
         this.clearCanvas();
 
         // Demo code to backfill the canvas with a solid color.
-        this.context.fillStyle = '#484848';
-        this.context.fillRect(0, 0, this.getCanvasWidth(), this.getCanvasHeight());
+        // this.context.fillStyle = '#484848';
+        // this.context.fillRect(0, 0, this.getCanvasWidth(), this.getCanvasHeight());
 
         this.uiFragmentsRender.run();
-        // this.spriteRenderer.run();
+        this.spriteRenderer.run();
+
+        // if (this.gridCoordinates) {
+        //     this.context.fillStyle = 'red';
+        //     this.context.fillRect(this.gridCoordinates.x * 16, this.gridCoordinates.y * 16, 16, 16);
+        // }
 
         this.resizeCanvas();
     }
@@ -127,21 +164,16 @@ export default class Canvas {
     onCanvasClick(event: MouseEvent): void {
         this.uiFragmentsRender.isHoveredFragmentClicked(this.mousePosition);
 
-        // TODO: Move this to a better place.
+        if (this.isContextMenuOpen) {
+            this.isContextMenuOpen = false;
+            document.body.removeChild(this.currentContextMenu);
+        }
 
+        this.spriteRenderer.processPendingSprite();
     }
 
     onCanvasHover(event: MouseEvent): void {
         this.mousePosition = new Point(event.clientX, event.clientY);
-
-        let gridPosition = currentViewportGridSquare(this.mousePosition); 
-        this.context.fillStyle = 'red';
-        Logger.data(gridPosition.x * 16);
-        Logger.data(gridPosition.y * 16);
-        this.context.fillRect(gridPosition.x * 16, gridPosition.y * 16, 16, 16);
-
-        // Determines fragment hovers.
-        // this.context.fillRect(this.mousePosition.)
     }
 
     onCanvasEnter(event: MouseEvent): void {

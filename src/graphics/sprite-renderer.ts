@@ -1,5 +1,8 @@
+import Application from "../application";
+import currentViewportGridSquare from "../helpers/current-viewport-grid-square";
 import { Logger } from "../logging/logger";
 import Canvas from "./canvas";
+import Sprite from "./sprite";
 
 export default class SpriteRenderer {
     canvas: Canvas;
@@ -24,7 +27,8 @@ export default class SpriteRenderer {
     }
 
     run(): void {
-        this.drawGrid();
+        // this.drawGrid();
+        this.drawLevelPreview();
     }
 
     drawGrid(): void {
@@ -38,6 +42,34 @@ export default class SpriteRenderer {
                 this.canvas.context.drawImage(this.tileset, 32, 176, 16, 16, spriteX, spriteY, 16, 16);
             }
         }
+    }
+
+    drawLevelPreview(): void {
+        this.canvas.fragments.spriteFragments.forEach((sprite: Sprite) => {
+            let image = new Image();
+            image.src = sprite.imageData;
+            this.canvas.context.drawImage(image, sprite.transform.x, sprite.transform.y); 
+        });
+    }
+
+    processPendingSprite(): void {
+        let spriteTemplate = Application.instance.stateManager.get<Sprite>('pending-sprite');
+
+        if (spriteTemplate) {
+            let spriteInstance = new Sprite();
+            spriteInstance.imageData = spriteTemplate.imageData;
+    
+            let gridCoordinates = currentViewportGridSquare(this.canvas.mousePosition);
+    
+            spriteInstance.transform.x = gridCoordinates.x * 16;
+            spriteInstance.transform.y = gridCoordinates.y * 16;
+            spriteInstance.transform.width = 16;
+            spriteInstance.transform.height = 16;
+    
+            this.canvas.fragments.spriteFragments.push(spriteInstance);
+        }
+
+        Logger.data(this.canvas.fragments.spriteFragments);
     }
 
     onTilesetLoaded(event: Event): void {
