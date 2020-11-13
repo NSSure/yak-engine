@@ -14,9 +14,9 @@ import StateManager from "../../state/state-manager";
 })
 export default class LayerEditorOverlay extends HtmlOverlay {
     title: string = 'Layer Editor';
-    order: number = 0;
+    order: number = 1;
     isEnabled: boolean = true;
-    overlayPosition = OverlayPosition.BOTTOM_RIGHT;
+    overlayPosition = OverlayPosition.TOP_RIGHT;
     isMoveable: boolean = true;
 
     ul: HTMLUListElement;

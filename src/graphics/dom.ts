@@ -16,10 +16,10 @@ export default class DOM {
      * @author NSSure
      */
     bootstrapDocumentEvents(): void {
-        document.addEventListener('mousemove', (event) => {
-            // Track the current quadrant that the mouse is located at in relation to the document.
-            this.determineMouseQuadrant(event.clientX, event.clientY);
-        });
+        // document.addEventListener('mousemove', (event) => {
+        //     // Track the current quadrant that the mouse is located at in relation to the document.
+        //     this.determineMouseQuadrant(event.clientX, event.clientY);
+        // });
     }
 
     /**

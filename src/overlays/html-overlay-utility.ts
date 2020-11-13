@@ -1,7 +1,28 @@
 import Application from "../application";
+import { Logger } from "../logging/logger";
 import HtmlOverlay from "./html-overlay";
+import { OverlayPosition } from "./overlay-position";
+
+const fieldSorter = (fields) => (a, b) => fields.map(o => {
+    let dir = 1;
+    if (o[0] === '-') { dir = -1; o=o.substring(1); }
+    return a[o] > b[o] ? dir : a[o] < b[o] ? -(dir) : 0;
+}).reduce((p, n) => p ? p : n, 0);
 
 export default class HtmlOverlayUtility {
+    // TODO: Should this stay in here.
+    public static countMap: any = {
+        '0': 0,
+        '1': 0,
+        '2': 0,
+        '3': 0,
+        '4': 0,
+        '5': 0,
+        '6': 0,
+        '7': 0,
+        '8': 0
+    };
+
     /**
      * Iterates through each overlay and calls the sync method for each enabled overlay.
      * The sync method allows for the overlays template to be synced with the current state of the application.
@@ -29,7 +50,15 @@ export default class HtmlOverlayUtility {
      */
     static initOverlays(): void {
         if (Application.instance.configuration.htmlOverlays) {
-            Application.instance.configuration.htmlOverlays.forEach((overlay: HtmlOverlay) => overlay.init());
+            // let positionOverlays = Application.instance.configuration.htmlOverlays.filter((item) => item.overlayPosition === this.overlayPosition).sort((a, b) => {
+            //     return a.order - b.order;
+            // });
+            let t = Application.instance.configuration.htmlOverlays.sort(fieldSorter(['overlayPosition', 'order']));
+
+            t.forEach((overlay: HtmlOverlay) => {
+                HtmlOverlayUtility.countMap[overlay.overlayPosition]++;
+                overlay.init();
+            });
         }
     }
 }

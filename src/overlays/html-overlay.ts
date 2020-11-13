@@ -1,14 +1,17 @@
 import Application from "../application";
+import Entity from "../entity";
 import { MouseQuadrant } from "../enums/MouseQuadrant";
 import { Logger } from "../logging/logger";
+import HtmlOverlayUtility from "./html-overlay-utility";
 import { OverlayPosition } from "./overlay-position";
 
-export default abstract class HtmlOverlay {
+export default abstract class HtmlOverlay extends Entity {
     public container: HTMLDivElement = <HTMLDivElement>document.createElement('div');
     public header: HTMLDivElement = <HTMLDivElement>document.createElement('div');
     public content: HTMLDivElement = <HTMLDivElement>document.createElement('div');
 
     public isInSnapZone: boolean = false;
+    public isInitialized: boolean = false;
 
     public template: string;
 
@@ -18,11 +21,16 @@ export default abstract class HtmlOverlay {
     abstract isMoveable: boolean = false;
     abstract overlayPosition: OverlayPosition;
 
+    public static topLeftContainer: HTMLDivElement = document.querySelector('.top-left-container');
+    public static topRightContainer: HTMLDivElement = document.querySelector('.top-right-container');
+    public static bottomLeftContainer: HTMLDivElement = document.querySelector('.bottom-left-container');
+    public static bottomRightContainer: HTMLDivElement = document.querySelector('.bottom-right-container');
+
     public abstract bootstrap(): void;
     public abstract sync(): void;
 
     constructor() {
-
+        super();
     }
 
     public init(): void {
@@ -45,13 +53,12 @@ export default abstract class HtmlOverlay {
         else {
             throw "You must provide either a literal template or a template url.";
         }
-
-
     }
 
     private _init(): void {
         this.container.classList.add('overlay-container');
-        this.container.style.position = 'absolute';
+        this.container.id = this.id;
+        this.container.setAttribute('data-order', this.order.toString());
 
         this.header.classList.add('overlay-header');
         let title = document.createElement('span');
@@ -61,8 +68,6 @@ export default abstract class HtmlOverlay {
         this.container.classList.add(this.constructor.prototype.name);
         this.content.classList.add('overlay-content');
         this.content.innerHTML = this.template;
-
-        this.processOverlayPosition();
 
         if (this.isMoveable) {
             let dragHandle = document.createElement('button');
@@ -141,61 +146,54 @@ export default abstract class HtmlOverlay {
         this.container.appendChild(this.header);
         this.container.appendChild(this.content);
 
-        document.body.appendChild(this.container);
-
+        this.processOverlayPosition();
         this.bootstrap();
+
+        this.isInitialized = true;
     }
 
     private processOverlayPosition(): void {
         // TODO: Clean this up this can be streamlined.
         switch (this.overlayPosition) {
             case OverlayPosition.TOP_LEFT:
-                this.container.style.top = '30px';
-                this.container.style.left = '30px';
-                this.container.style.bottom = '';
+                HtmlOverlay.topLeftContainer.appendChild(this.container);
                 break;
             case OverlayPosition.TOP_CENTER:
-                this.container.style.top = '30px';
-                this.container.style.left = '50%';
-                this.container.style.transform = 'translateX(-50%)';
-                this.container.style.bottom = '';
+                
                 break;
             case OverlayPosition.TOP_RIGHT:
-                this.container.style.top = '30px';
-                this.container.style.right = '30px';
-                this.container.style.bottom = '';
-                this.container.style.left = '';
+                if (HtmlOverlay.topRightContainer.children.length !== 0) {
+                    HtmlOverlay.topRightContainer.childNodes.forEach((child: HTMLDivElement) => {
+                        if (this.order < parseInt(child.dataset.order)) {
+                            HtmlOverlay.topRightContainer.insertBefore(this.container, child);
+                        }
+                        else {
+                            HtmlOverlay.topRightContainer.appendChild(this.container);
+                        }
+                    });
+                }
+                else {
+                    HtmlOverlay.topRightContainer.appendChild(this.container);
+                }
+
                 break;
             case OverlayPosition.CENTER_LEFT:
-                this.container.style.top = '50%';
-                this.container.style.transform = 'translateY(-50%)';
+                
                 break;
             case OverlayPosition.CENTER:
-                this.container.style.top = '50%';
-                this.container.style.left = '50%'
-                this.container.style.transform = 'translate(-50%, -50%)';
+                
                 break;
             case OverlayPosition.CENTER_RIGHT:
-                this.container.style.top = '50%';
-                this.container.style.right = '30px';
-                this.container.style.transform = 'translateY(-50%)';
+                
                 break;
             case OverlayPosition.BOTTOM_LEFT:
-                this.container.style.bottom = '30px';
-                this.container.style.left = '30px';
-                this.container.style.top = '';
+                HtmlOverlay.bottomLeftContainer.appendChild(this.container);
                 break;
             case OverlayPosition.BOTTOM_CENTER:
-                this.container.style.bottom = '30px';
-                this.container.style.left = '50%';
-                this.container.style.transform = 'translateX(-50%)';
-                this.container.style.top = '';
+                
                 break;
             case OverlayPosition.BOTTOM_RIGHT:
-                this.container.style.bottom = '30px';
-                this.container.style.right = '30px';
-                this.container.style.top = '';
-                this.container.style.left = '';
+                HtmlOverlay.bottomRightContainer.appendChild(this.container);
                 break;
         }
     }

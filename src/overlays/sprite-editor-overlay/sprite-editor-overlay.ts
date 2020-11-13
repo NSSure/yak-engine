@@ -85,9 +85,10 @@ export default class SpriteEditorOverlay extends HtmlOverlay {
                                     spriteImg.classList.add('pending-sprite');
 
                                     let { spriteRow, spriteColumn } = (<HTMLLIElement>event.target).dataset;
+                                    
                                     let sprite = new Sprite();
                                     sprite.imageData = canvas.toDataURL();
-                                    Application.instance.stateManager.commit<any>('pending-sprite', sprite);
+                                    Application.instance.stateManager.commit<Sprite>('pending-sprite', sprite);
 
                                     // sprite.x = Application.instance.graphics.canvas.mousePosition.x;
                                     // sprite.y = Application.instance.graphics.canvas.mousePosition.y;

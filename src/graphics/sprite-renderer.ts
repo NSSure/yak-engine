@@ -27,8 +27,8 @@ export default class SpriteRenderer {
     }
 
     run(): void {
-        // this.drawGrid();
         this.drawLevelPreview();
+        this.drawGrid();
     }
 
     drawGrid(): void {
@@ -36,11 +36,26 @@ export default class SpriteRenderer {
         let spriteCountY = this.canvas.getCanvasHeight() / this.spriteHeight;
 
         for (let column = 0; column < spriteCountX; column++) {
-            let spriteX = this.spriteWidth * column;
-            for (let row = 0; row < spriteCountY; row++) {
-                let spriteY = this.spriteHeight * row;
-                this.canvas.context.drawImage(this.tileset, 32, 176, 16, 16, spriteX, spriteY, 16, 16);
-            }
+            this.canvas.context.beginPath(); 
+            this.canvas.context.lineWidth = 0.5;
+            this.canvas.context.strokeStyle = '#686868';
+            this.canvas.context.moveTo(column * 16, 0);
+            this.canvas.context.lineTo(column * 16, this.canvas.getCanvasHeight());
+            this.canvas.context.stroke();
+            this.canvas.context.closePath();
+        }
+
+        for (let row = 0; row < spriteCountY; row++) {
+            // let spriteY = this.spriteHeight * row;
+            // this.canvas.context.strokeRect(this.tileset, 32, 176, 16, 16, spriteX, spriteY, 16, 16);
+            
+            this.canvas.context.beginPath(); 
+            this.canvas.context.lineWidth = 0.5;
+            this.canvas.context.strokeStyle = '#686868';
+            this.canvas.context.moveTo(0, row * 16);
+            this.canvas.context.lineTo(this.canvas.getCanvasWidth(), row * 16);
+            this.canvas.context.stroke();
+            this.canvas.context.closePath();
         }
     }
 
@@ -68,8 +83,6 @@ export default class SpriteRenderer {
     
             this.canvas.fragments.spriteFragments.push(spriteInstance);
         }
-
-        Logger.data(this.canvas.fragments.spriteFragments);
     }
 
     onTilesetLoaded(event: Event): void {

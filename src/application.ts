@@ -1,5 +1,4 @@
 import Game from './game';
-import { Logger } from './logging/logger';
 
 export default class Application {
     static instance: Game;

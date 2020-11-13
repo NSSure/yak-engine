@@ -1,7 +1,11 @@
 import Application from "../application";
+import createImageFromSprite from "../helpers/create-image-from-sprite";
+import currentViewportGridCoordinates from "../helpers/current-viewport-grid-square";
 import isCoordinateContained from "../helpers/is-coordinate-contained";
+import isTransformEmpty from "../helpers/is-transform-empty";
 import { Logger } from "../logging/logger";
 import Point from "../primitives/Point";
+import Transform from "../primitives/transform";
 import UIFragmentsRenderer from "../ui/ui-fragments-renderer";
 import Fragments from "./fragments";
 import Sprite from "./sprite";
@@ -30,11 +34,17 @@ export default class Canvas {
      */
     public mousePosition: Point = new Point(0, 0);
 
+    public lastMousePosition: Point = new Point(0, 0);
+
     public fragments: Fragments = new Fragments();
 
     public isContextMenuOpen: boolean = false;
 
+    public isMouseDown: boolean = false;
+
     public currentContextMenu: HTMLDivElement;
+
+    public selectionTransform: Transform = new Transform(0, 0, 0, 0);
 
     /**
      * Default constructor. Queries the canvas together with the canvas context
@@ -48,14 +58,13 @@ export default class Canvas {
             console.log(event);
         });
 
-        this.engineCanvas.addEventListener('click', (event) => this.onCanvasClick(event));
-        this.engineCanvas.addEventListener('mousemove', (event) => this.onCanvasHover(event));
+        this.engineCanvas.addEventListener('mousedown', (event) => this.onCanvasMouseDown(event));
+        this.engineCanvas.addEventListener('mouseup', (event) => this.onCanvasMouseUp(event));
+        this.engineCanvas.addEventListener('mousemove', (event) => this.onCanvasMouseMove(event));
         this.engineCanvas.addEventListener('mouseenter', (event) => this.onCanvasEnter(event));
         this.engineCanvas.addEventListener('mouseleave', (event) => this.onCanvasLeave(event));
 
         fetch('./maps/sample-sprite-map.json').then((response) => response.json()).then((map) => {
-            Logger.data(map);
-            
             this.fragments.spriteFragments = this.fragments.spriteFragments.concat(map);
         });
 
@@ -101,16 +110,25 @@ export default class Canvas {
         this.clearCanvas();
 
         // Demo code to backfill the canvas with a solid color.
-        // this.context.fillStyle = '#484848';
-        // this.context.fillRect(0, 0, this.getCanvasWidth(), this.getCanvasHeight());
+        this.context.fillStyle = '#181818';
+        this.context.fillRect(0, 0, this.getCanvasWidth(), this.getCanvasHeight());
 
         this.uiFragmentsRender.run();
         this.spriteRenderer.run();
 
-        // if (this.gridCoordinates) {
-        //     this.context.fillStyle = 'red';
-        //     this.context.fillRect(this.gridCoordinates.x * 16, this.gridCoordinates.y * 16, 16, 16);
-        // }
+        if (!isTransformEmpty(this.selectionTransform)) {
+            this.context.fillStyle = 'rgba(252,248,227, 0.7)';
+            this.context.fillRect(this.selectionTransform.x, this.selectionTransform.y, this.selectionTransform.width, this.selectionTransform.height);
+        }
+
+        if (this.gridCoordinates) {
+            let sprite = Application.instance.stateManager.get<Sprite>('pending-sprite');
+
+            if (sprite) {
+                let pendingSpriteImage = createImageFromSprite(sprite);
+                this.context.drawImage(pendingSpriteImage, this.gridCoordinates.x * 16, this.gridCoordinates.y * 16);
+            }
+        }
 
         this.resizeCanvas();
     }
@@ -161,7 +179,9 @@ export default class Canvas {
         this.engineCanvas.width = width;
     }
 
-    onCanvasClick(event: MouseEvent): void {
+    onCanvasMouseDown(event: MouseEvent): void {
+        this.isMouseDown = true;
+
         this.uiFragmentsRender.isHoveredFragmentClicked(this.mousePosition);
 
         if (this.isContextMenuOpen) {
@@ -172,8 +192,60 @@ export default class Canvas {
         this.spriteRenderer.processPendingSprite();
     }
 
-    onCanvasHover(event: MouseEvent): void {
+    onCanvasMouseUp(event: MouseEvent): void {
+        if (!isTransformEmpty(this.selectionTransform)) {
+            let spriteTemplate = Application.instance.stateManager.get<Sprite>('pending-sprite');
+
+            if (spriteTemplate) {
+                let rows = this.selectionTransform.height / 16;
+                let columns = this.selectionTransform.width / 16;
+
+                Logger.data(`rows: ${rows} // columns: ${columns}`);
+
+                let test = [];
+
+                for (let row = 0; row < rows; row++) {
+                    for (let column = 0; column < columns; column++) {
+                        let spriteInstance = new Sprite();
+
+                        spriteInstance.imageData = spriteTemplate.imageData;
+                        spriteInstance.transform.x = (column * 16) + this.selectionTransform.x;
+                        spriteInstance.transform.y = (row * 16) + this.selectionTransform.y;
+                        spriteInstance.transform.width = 16;
+                        spriteInstance.transform.height = 16;
+
+                        Logger.data(spriteInstance);
+
+                        test.push(spriteInstance);
+                        this.fragments.spriteFragments.push(spriteInstance);
+                        
+                    }
+                }
+                Logger.data(this.fragments.spriteFragments);
+                Logger.data(test);
+            }
+        }
+
+        this.isMouseDown = false;
+        this.selectionTransform = Transform.empty;
+    }
+
+    gridCoordinates: Point;
+
+    onCanvasMouseMove(event: MouseEvent): void {
         this.mousePosition = new Point(event.clientX, event.clientY);
+
+        this.gridCoordinates = currentViewportGridCoordinates(this.mousePosition);
+
+        if (this.isMouseDown) {
+            if (isTransformEmpty(this.selectionTransform)) {
+                this.selectionTransform = new Transform(this.gridCoordinates.x * 16, this.gridCoordinates.y * 16, 0, 0);
+            }
+            else {
+                this.selectionTransform.width = ((this.gridCoordinates.x * 16) - this.selectionTransform.x) + 16;
+                this.selectionTransform.height = ((this.gridCoordinates.y * 16) - this.selectionTransform.y) + 16;
+            }
+        }
     }
 
     onCanvasEnter(event: MouseEvent): void {
