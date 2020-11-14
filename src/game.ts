@@ -19,6 +19,8 @@ export default class Game {
         // Call necessary utility functions for startup.
         HtmlOverlayUtility.initOverlays();
 
+        // Get tilesets.
+
         // Initialize the first iteration of the gameloop.
         window.requestAnimationFrame((time: number) => this.gameLoop(time));
     }

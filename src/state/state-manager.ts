@@ -19,6 +19,10 @@ export default class StateManager {
         return null;
     }
 
+    exists(key: string): boolean {
+        return this.data.has(key);
+    }
+
     delete(key: string): void {
         if (this.data.has(key)) {
             this.data.delete(key)

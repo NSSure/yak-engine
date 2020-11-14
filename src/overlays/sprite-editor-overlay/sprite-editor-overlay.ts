@@ -4,6 +4,11 @@ import HtmlOverlay from "../html-overlay";
 import { OverlayPosition } from "../overlay-position";
 import { HtmlOverlayDecorator } from '../../decorators/html-overlay-decorator';
 import Sprite from "../../graphics/sprite";
+import Transform from "../../primitives/transform";
+import EditorImageSource from "../../graphics/editor-image-source";
+import { Logger } from "../../logging/logger";
+import Tileset from "../../graphics/tileset";
+import Point from "../../primitives/Point";
 
 @HtmlOverlayDecorator({
     name: 'sprite-editor',
@@ -16,8 +21,12 @@ export default class SpriteEditorOverlay extends HtmlOverlay {
     overlayPosition = OverlayPosition.TOP_LEFT;
     isMoveable: boolean = true;
 
+    spriteLoader: HTMLDivElement;
+
     // This will be fired after the init function is fired.
     bootstrap() {
+        this.spriteLoader = <HTMLDivElement>this.container.querySelector('.sprite-loader');
+
         let btnLoadTileset = <HTMLButtonElement>document.querySelector('#btn-load-tileset');
         let btnSlice = <HTMLButtonElement>document.querySelector('#btn-slice');
         let tilesetPath = <HTMLInputElement>document.querySelector('#tileset-path');
@@ -26,7 +35,13 @@ export default class SpriteEditorOverlay extends HtmlOverlay {
 
         if (btnLoadTileset) {
             btnLoadTileset.addEventListener('click', (event) => {
+                this.spriteLoader.style.display = 'inherit';
+
                 tileset.onload = () => {
+                    let newTileset = new Tileset();
+                    newTileset.image = tileset;
+                    Application.instance.graphics.canvas.tilesets.push(newTileset);
+
                     (<HTMLDivElement>document.querySelector('#tileset-dimensions')).style.display = 'inherit';
                     btnSlice.click();
                 }
@@ -57,20 +72,22 @@ export default class SpriteEditorOverlay extends HtmlOverlay {
                     let spriteCountX = tileset.width / pixelSizeX;
                     let spriteCountY = tileset.height / pixelSizeY;
 
-                    for (let column = 0; column < spriteCountX; column++) {
-                        for (let row = 0; row < spriteCountY; row++) {
+                    for (let row = 0; row < spriteCountY; row++) {
+                        for (let column = 0; column < spriteCountX; column++) {
                             let canvas = <HTMLCanvasElement>document.createElement('canvas');
 
                             canvas.width = pixelSizeX * pixelScaler;
                             canvas.height = pixelSizeY * pixelScaler;
 
-                            canvas.getContext('2d')?.drawImage(tileset, pixelSizeX * column, pixelSizeY * row, pixelSizeX, pixelSizeY, 0, 0, 16 * pixelScaler, 16 * pixelScaler);
+                            canvas.getContext('2d')?.drawImage(tileset, pixelSizeX * column, pixelSizeY * row, pixelSizeX, pixelSizeY, 0, 0, 32 * pixelScaler, 32 * pixelScaler);
 
                             if (!isCanvasBlank(canvas)) {
                                 let li = document.createElement('li');
-                                let spriteImg = document.createElement('img');
+
                                 li.setAttribute('data-sprite-row', row.toString());
                                 li.setAttribute('data-sprite-column', column.toString());
+
+                                let spriteImg = document.createElement('img');
 
                                 spriteImg.addEventListener('click', (event) => {
                                     event.stopImmediatePropagation();
@@ -84,19 +101,26 @@ export default class SpriteEditorOverlay extends HtmlOverlay {
 
                                     spriteImg.classList.add('pending-sprite');
 
-                                    let { spriteRow, spriteColumn } = (<HTMLLIElement>event.target).dataset;
-                                    
+                                    // Start pend sprite.
                                     let sprite = new Sprite();
-                                    sprite.imageData = canvas.toDataURL();
-                                    Application.instance.stateManager.commit<Sprite>('pending-sprite', sprite);
 
-                                    // sprite.x = Application.instance.graphics.canvas.mousePosition.x;
-                                    // sprite.y = Application.instance.graphics.canvas.mousePosition.y;
-                                    // sprite.width = 16;
-                                    // sprite.height = 16;
-                                    // sprite.enabled = true;
-                                    // sprite.order = 0;
-                                    // sprite.layer = 0;
+                                    let tilesetColumns = tileset.width / pixelSizeX;
+                                    let tilesetRows = tileset.height / pixelSizeY;
+
+                                    Logger.data(`row: ${tilesetRows} // column: ${tilesetColumns}`);
+                                    Logger.data(column * Application.instance.configuration.gridSquareSize);
+                                    Logger.data(row * Application.instance.configuration.gridSquareSize);
+
+                                    sprite.tilesetTransform = new Transform(
+                                        column * Application.instance.configuration.gridSquareSize,
+                                        row * Application.instance.configuration.gridSquareSize, 
+                                        Application.instance.configuration.gridSquareSize,
+                                        Application.instance.configuration.gridSquareSize
+                                    );
+
+                                    sprite.tileset = 0;
+
+                                    Application.instance.stateManager.commit<Sprite>('pending-sprite', sprite);
                                 })
 
                                 spriteImg.src = canvas.toDataURL();
@@ -106,6 +130,8 @@ export default class SpriteEditorOverlay extends HtmlOverlay {
                         }
                     }
                 }
+
+                this.spriteLoader.style.display = 'none';
             })
         }
     }

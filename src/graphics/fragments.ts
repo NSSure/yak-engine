@@ -1,5 +1,6 @@
 import Primitive from "../primitives/primitive";
 import UIFragment from "../ui/ui-base";
+import EditorImageSource from "./editor-image-source";
 import Sprite from "./sprite";
 
 /**
@@ -13,4 +14,5 @@ export default class Fragments {
     uiFragments: Array<UIFragment> = new Array();
     primitiveFragments: Array<Primitive> = new Array();
     spriteFragments: Array<Sprite> = new Array();
+    editorFragments: Array<EditorImageSource> = new Array();
 }

@@ -2,7 +2,6 @@ import Application from "../application";
 import { uiConstants } from "../constants";
 import Canvas from "../graphics/canvas";
 import isCoordinateContained from "../helpers/is-coordinate-contained";
-import { Logger } from "../logging/logger";
 import Point from "../primitives/Point";
 import Button from "./button";
 import UIFragment from "./ui-base";

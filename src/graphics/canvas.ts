@@ -1,5 +1,4 @@
 import Application from "../application";
-import createImageFromSprite from "../helpers/create-image-from-sprite";
 import currentViewportGridCoordinates from "../helpers/current-viewport-grid-square";
 import isCoordinateContained from "../helpers/is-coordinate-contained";
 import isTransformEmpty from "../helpers/is-transform-empty";
@@ -8,8 +7,11 @@ import Point from "../primitives/Point";
 import Transform from "../primitives/transform";
 import UIFragmentsRenderer from "../ui/ui-fragments-renderer";
 import Fragments from "./fragments";
+import Layer from "./layer";
+import EditorRenderer from "./renderers/editor-renderer";
 import Sprite from "./sprite";
 import SpriteRenderer from "./sprite-renderer";
+import Tileset from "./tileset";
 
 export default class Canvas {
     /**
@@ -23,27 +25,74 @@ export default class Canvas {
     public context: CanvasRenderingContext2D = <CanvasRenderingContext2D>this.engineCanvas.getContext('2d');
 
     /**
+     * 
+     */
+    public tilesets: Array<Tileset> = new Array();
+
+    /**
+     * 
+     */
+    public layers: Array<Layer> = new Array();
+
+    /**
      * The renderer that handle drawing the UI fragments to the given canvas context.
      */
     public uiFragmentsRender: UIFragmentsRenderer = new UIFragmentsRenderer(this);
 
+    /**
+     * 
+     */
     public spriteRenderer: SpriteRenderer = new SpriteRenderer(this);
+
+    /**
+     * 
+     */
+    public editorRenderer: EditorRenderer = new EditorRenderer(this);
+
+    /**
+     * 
+     */
+    public fragments: Fragments = new Fragments();
 
     /**
      * The current position of the mouse in relation to the canvas. NOT the document.
      */
     public mousePosition: Point = new Point(0, 0);
 
+    /**
+     * The last position of the mouse within the canvas. 
+     */
     public lastMousePosition: Point = new Point(0, 0);
 
-    public fragments: Fragments = new Fragments();
+    /**
+     * The last grid position of the mouse within the canvas.
+     */
+    public gridCoordinates: Point;
 
+    /**
+     * Flag to determine if the canvas context menu is open.
+     */
     public isContextMenuOpen: boolean = false;
 
+    /**
+     * Flag to determine if the mouse is down (specifcally left mouse clicks).
+     */
     public isMouseDown: boolean = false;
 
+    /**
+     * The context menu DOM element.
+     */
     public currentContextMenu: HTMLDivElement;
 
+    /**
+     * Flag to determine if the canvas has selection mode enabled.
+     */
+    public isSelectionMode: boolean = false;
+
+    /**
+     * The transform of the current selection. If selection mode is off this
+     * will be an empty transform.
+     */
     public selectionTransform: Transform = new Transform(0, 0, 0, 0);
 
     /**
@@ -51,6 +100,8 @@ export default class Canvas {
      * and bootstraps the canvas events.
      */
     constructor() {
+        this.layers.push(new Layer("Default"));
+
         // Ensure we resize the canvas here.
         this.resizeCanvas();
 
@@ -64,39 +115,54 @@ export default class Canvas {
         this.engineCanvas.addEventListener('mouseenter', (event) => this.onCanvasEnter(event));
         this.engineCanvas.addEventListener('mouseleave', (event) => this.onCanvasLeave(event));
 
-        fetch('./maps/sample-sprite-map.json').then((response) => response.json()).then((map) => {
-            this.fragments.spriteFragments = this.fragments.spriteFragments.concat(map);
-        });
+        this.engineCanvas.addEventListener('focusout', (event) => {
+            if (this.isContextMenuOpen) {
+                this.isContextMenuOpen = false;
+                document.body.removeChild(this.currentContextMenu);
+            }
+        })
+
+        // fetch('./maps/sample-sprite-map-v2-large.json').then((response) => response.json()).then((map) => {
+        //     this.fragments.spriteFragments = this.fragments.spriteFragments.concat(map);
+        // });
 
         // TODO: Move this it should not be here.
         this.engineCanvas.oncontextmenu = (event) => {
             event.preventDefault();
 
+            // Can't open context menu when in selection mode. The menu is opened after the selection is made.
+            if (this.isSelectionMode) {
+                return;
+            }
+
             this.fragments.spriteFragments.some((sprite: Sprite) => {
                 if (isCoordinateContained(this.mousePosition, sprite.transform)) {
                     event.preventDefault();
-
-                    if (this.isContextMenuOpen) {
-                        return;
-                    }
-
-                    Application.instance.stateManager.delete('pending-sprite');
-
-                    this.isContextMenuOpen = true;
-
-                    this.currentContextMenu = document.createElement('div');
-
-                    this.currentContextMenu.classList.add('engine-context-menu');
-                    this.currentContextMenu.style.position = 'absolute';
-                    this.currentContextMenu.style.top = `${sprite.transform.y + 16}px`;
-                    this.currentContextMenu.style.left = `${sprite.transform.x + 16}px`;
-
-                    this.currentContextMenu.innerHTML = Application.contextMenuTemplate;
-
-                    document.body.appendChild(this.currentContextMenu);
+                    this.openContextMenu(new Point(sprite.transform.x, sprite.transform.y));
                 }
             });
         }
+    }
+
+    openContextMenu(transformCoordinates: Point): void {
+        if (this.isContextMenuOpen) {
+            document.body.removeChild(this.currentContextMenu);
+        }
+
+        Application.instance.stateManager.delete('pending-sprite-image');
+
+        this.isContextMenuOpen = true;
+
+        this.currentContextMenu = document.createElement('div');
+
+        this.currentContextMenu.classList.add('engine-context-menu');
+        this.currentContextMenu.style.position = 'absolute';
+        this.currentContextMenu.style.top = `${transformCoordinates.y + Application.instance.configuration.gridSquareSize}px`;
+        this.currentContextMenu.style.left = `${transformCoordinates.x + Application.instance.configuration.gridSquareSize}px`;
+
+        this.currentContextMenu.innerHTML = Application.contextMenuTemplate;
+
+        document.body.appendChild(this.currentContextMenu);
     }
 
     /**
@@ -110,25 +176,12 @@ export default class Canvas {
         this.clearCanvas();
 
         // Demo code to backfill the canvas with a solid color.
-        this.context.fillStyle = '#181818';
+        this.context.fillStyle = Application.instance.configuration.canvasFill;
         this.context.fillRect(0, 0, this.getCanvasWidth(), this.getCanvasHeight());
 
-        this.uiFragmentsRender.run();
         this.spriteRenderer.run();
-
-        if (!isTransformEmpty(this.selectionTransform)) {
-            this.context.fillStyle = 'rgba(252,248,227, 0.7)';
-            this.context.fillRect(this.selectionTransform.x, this.selectionTransform.y, this.selectionTransform.width, this.selectionTransform.height);
-        }
-
-        if (this.gridCoordinates) {
-            let sprite = Application.instance.stateManager.get<Sprite>('pending-sprite');
-
-            if (sprite) {
-                let pendingSpriteImage = createImageFromSprite(sprite);
-                this.context.drawImage(pendingSpriteImage, this.gridCoordinates.x * 16, this.gridCoordinates.y * 16);
-            }
-        }
+        this.uiFragmentsRender.run();
+        this.editorRenderer.run();
 
         this.resizeCanvas();
     }
@@ -156,13 +209,6 @@ export default class Canvas {
         }
     }
 
-    drawText(): void {
-        this.context.font = '30px Arial';
-        this.context.fillStyle = 'red';
-        this.context.textAlign = 'center';
-        this.context.fillText('Hello world', 100, 100);
-    }
-
     getCanvasHeight(): number {
         return this.engineCanvas.height;
     }
@@ -179,71 +225,78 @@ export default class Canvas {
         this.engineCanvas.width = width;
     }
 
+    toggleSelectionMode(state: boolean): void {
+        this.isSelectionMode = state;
+        this.selectionTransform = Transform.empty;
+    }
+
     onCanvasMouseDown(event: MouseEvent): void {
-        this.isMouseDown = true;
+        if (event.button === 0) {
+            this.isMouseDown = true;
 
-        this.uiFragmentsRender.isHoveredFragmentClicked(this.mousePosition);
+            this.uiFragmentsRender.isHoveredFragmentClicked(this.mousePosition);
 
-        if (this.isContextMenuOpen) {
-            this.isContextMenuOpen = false;
-            document.body.removeChild(this.currentContextMenu);
+            if (this.isContextMenuOpen) {
+                this.isContextMenuOpen = false;
+                document.body.removeChild(this.currentContextMenu);
+            }
+    
+            if (this.isSelectionMode) {
+                this.selectionTransform = Transform.empty;
+            }
         }
-
-        this.spriteRenderer.processPendingSprite();
     }
 
     onCanvasMouseUp(event: MouseEvent): void {
         if (!isTransformEmpty(this.selectionTransform)) {
-            let spriteTemplate = Application.instance.stateManager.get<Sprite>('pending-sprite');
+            let spriteTemplate = Application.instance.stateManager.get<any>('pending-sprite-image')
 
+            // If there is a pending sprite auto fill the selection.
             if (spriteTemplate) {
-                let rows = this.selectionTransform.height / 16;
-                let columns = this.selectionTransform.width / 16;
-
-                Logger.data(`rows: ${rows} // columns: ${columns}`);
-
-                let test = [];
+                let rows = this.selectionTransform.height / Application.instance.configuration.gridSquareSize;
+                let columns = this.selectionTransform.width / Application.instance.configuration.gridSquareSize;
 
                 for (let row = 0; row < rows; row++) {
                     for (let column = 0; column < columns; column++) {
                         let spriteInstance = new Sprite();
 
-                        spriteInstance.imageData = spriteTemplate.imageData;
-                        spriteInstance.transform.x = (column * 16) + this.selectionTransform.x;
-                        spriteInstance.transform.y = (row * 16) + this.selectionTransform.y;
-                        spriteInstance.transform.width = 16;
-                        spriteInstance.transform.height = 16;
+                        spriteInstance.transform.x = (column * Application.instance.configuration.gridSquareSize) + this.selectionTransform.x;
+                        spriteInstance.transform.y = (row * Application.instance.configuration.gridSquareSize) + this.selectionTransform.y;
+                        spriteInstance.transform.width = Application.instance.configuration.gridSquareSize;
+                        spriteInstance.transform.height = Application.instance.configuration.gridSquareSize;
+                        // spriteInstance.tilesetTransform = spriteTemplate.tilesetTransform;
 
-                        Logger.data(spriteInstance);
-
-                        test.push(spriteInstance);
                         this.fragments.spriteFragments.push(spriteInstance);
-                        
                     }
                 }
+
                 Logger.data(this.fragments.spriteFragments);
-                Logger.data(test);
+            }
+            else {
+                Logger.info('we hit on mouse up with a non empty transform');
+                Logger.data(this.selectionTransform);
+
+                if (this.isSelectionMode) {
+                    this.openContextMenu(new Point(this.mousePosition.x, this.mousePosition.y));
+                }
             }
         }
 
         this.isMouseDown = false;
-        this.selectionTransform = Transform.empty;
     }
-
-    gridCoordinates: Point;
 
     onCanvasMouseMove(event: MouseEvent): void {
         this.mousePosition = new Point(event.clientX, event.clientY);
 
         this.gridCoordinates = currentViewportGridCoordinates(this.mousePosition);
 
-        if (this.isMouseDown) {
+        if (this.isSelectionMode && this.isMouseDown) {
             if (isTransformEmpty(this.selectionTransform)) {
-                this.selectionTransform = new Transform(this.gridCoordinates.x * 16, this.gridCoordinates.y * 16, 0, 0);
+                this.selectionTransform = new Transform(this.gridCoordinates.x * Application.instance.configuration.gridSquareSize, this.gridCoordinates.y * Application.instance.configuration.gridSquareSize, 0, 0);
             }
             else {
-                this.selectionTransform.width = ((this.gridCoordinates.x * 16) - this.selectionTransform.x) + 16;
-                this.selectionTransform.height = ((this.gridCoordinates.y * 16) - this.selectionTransform.y) + 16;
+                this.selectionTransform.width = ((this.gridCoordinates.x * Application.instance.configuration.gridSquareSize) - this.selectionTransform.x) + Application.instance.configuration.gridSquareSize;
+                this.selectionTransform.height = ((this.gridCoordinates.y * Application.instance.configuration.gridSquareSize) - this.selectionTransform.y) + Application.instance.configuration.gridSquareSize;
             }
         }
     }

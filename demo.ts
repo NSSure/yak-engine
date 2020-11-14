@@ -1,11 +1,9 @@
 import Application from "./src/application";
-import { Logger } from "./src/logging/logger";
 import EngineStatsOverlay from "./src/overlays/engine-stats-overlay";
 import FragmentsOverlay from "./src/overlays/ui-fragments-overlay";
 import SpriteEditorOverlay from "./src/overlays/sprite-editor-overlay/sprite-editor-overlay";
-import Button from "./src/ui/button";
-import HoverState from "./src/ui/states/hover-state";
 import LayerEditorOverlay from "./src/overlays/layer-editor-overlay/layer-editor-overlay";
+import ToolbarRibbonOverlay from "./src/overlays/toolbar-ribbon-overlay/toolbar-ribbon-overlay";
 
 export default class Demo extends Application {
     constructor() {
@@ -13,8 +11,9 @@ export default class Demo extends Application {
 
         // Make any modifications to the game configuration before initialize is called.
         this.instance.configuration.htmlOverlays.push(new SpriteEditorOverlay());
-        this.instance.configuration.htmlOverlays.push(new LayerEditorOverlay());
+        this.instance.configuration.htmlOverlays.push(new ToolbarRibbonOverlay());
         this.instance.configuration.htmlOverlays.push(new EngineStatsOverlay());
+        this.instance.configuration.htmlOverlays.push(new LayerEditorOverlay());
         this.instance.configuration.htmlOverlays.push(new FragmentsOverlay());
 
         // let button = new Button((this.instance.graphics.canvas.getCanvasWidth() / 2) - 100, this.instance.graphics.canvas.getCanvasHeight() / 2, 200, 50);

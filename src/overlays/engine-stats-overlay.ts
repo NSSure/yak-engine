@@ -18,7 +18,7 @@ import { OverlayPosition } from "./overlay-position";
 })
 export default class EngineStatsOverlay extends HtmlOverlay {
     title: string = 'Engine Statistics';
-    order: number = 0;
+    order: number = 10;
     isEnabled: boolean = true;
     overlayPosition = OverlayPosition.TOP_RIGHT;
     isMoveable: boolean = true;
