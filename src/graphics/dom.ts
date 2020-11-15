@@ -1,7 +1,10 @@
 import { MouseQuadrant } from "../enums/MouseQuadrant";
+import { Logger } from "../logging/logger";
+import Point from "../primitives/Point";
 
 export default class DOM {
-    mouseQuadrant: MouseQuadrant = MouseQuadrant.NONE;
+    public mouseQuadrant: MouseQuadrant = MouseQuadrant.NONE;
+    public mousePosition: Point = new Point(0, 0);
 
     /**
      * Default constructor. Bootstraps document events.
@@ -16,10 +19,12 @@ export default class DOM {
      * @author NSSure
      */
     bootstrapDocumentEvents(): void {
-        // document.addEventListener('mousemove', (event) => {
-        //     // Track the current quadrant that the mouse is located at in relation to the document.
-        //     this.determineMouseQuadrant(event.clientX, event.clientY);
-        // });
+        document.addEventListener('mousemove', (event) => {
+            Logger.info('i am still firing');
+            // Track the current quadrant that the mouse is located at in relation to the document.
+            this.mousePosition = new Point(event.clientX, event.clientY);
+            this.determineMouseQuadrant(event.clientX, event.clientY);
+        });
     }
 
     /**

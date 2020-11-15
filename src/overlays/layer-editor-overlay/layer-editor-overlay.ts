@@ -25,30 +25,117 @@ export default class LayerEditorOverlay extends HtmlOverlay {
 
         this.content.querySelector('button').addEventListener('click', (event) => {
             let value = (<HTMLInputElement>this.content.querySelector('input')).value;
-            Application.instance.stateManager.commit(`layer-${value}`, value);
-
-            let li = document.createElement('li');
-            li.innerText = value;
-            this.ul.appendChild(li);
-
             let layer = new Layer(value);
             Application.instance.graphics.canvas.layers.push(layer);
+
+            (<HTMLInputElement>this.container.querySelector('input')).value = '';
         });
+
+        (<HTMLInputElement>this.container.querySelector('input')).ondrop = (event: DragEvent) => {
+            Logger.info('i was dropped into an input');
+        }
     }
 
     sync() {
         if (this.ul) {
             Application.instance.graphics.canvas.layers.forEach((layer: Layer, layerIndex: number) => {
                 if (!this.ul.querySelector(`li[id="${layer.id}"]`)) {
+                    Logger.info(layer.id);
+
                     let li = <HTMLLIElement>this.liTemplate.cloneNode(true);
                     li.id = layer.id;
+
+                    li.draggable = true;
+
+                    li.ondragstart = (event: DragEvent) => {
+                        event.dataTransfer.setData('text/plain', layerIndex.toString());
+                    };
+
+                    li.ondragenter = (event: DragEvent) => {
+                        event.preventDefault();
+                    }
+
+                    li.ondragover = (event: DragEvent) => {
+                        event.preventDefault();
+                        Logger.info('I was just dragged on: ' + layer.id);
+
+                        let target = (<HTMLLIElement>event.target);
+                        
+                        let top = target.getBoundingClientRect().top;
+                        let half = target.getBoundingClientRect().top + (target.clientHeight / 2);
+
+                        if (event.clientY > top && event.clientY < half) {
+                            target.style.borderTop = '2px solid yellow';
+                        }
+                        else if (event.clientY > top && event.clientY > half && event.clientY < (top + target.clientHeight)) {
+                            target.style.borderBottom = '2px solid yellow';
+                        }
+                        else {
+                            Logger.info('math is hard');
+                        }
+                    }
+
+                    li.ondrop = (event: DragEvent) => {
+                        event.preventDefault();
+
+                        Logger.info('dropped');
+
+                        let layerIndex = parseInt(event.dataTransfer.getData('text/plain'));
+
+                        let targetLayerId = (<HTMLLIElement>event.target).id;
+                        let targetLayerIndex = Application.instance.graphics.canvas.layers.findIndex(x => x.id === targetLayerId);
+
+                        let sourceLayer = Application.instance.graphics.canvas.layers.splice(layerIndex, 1)[0];
+
+                        Application.instance.graphics.canvas.layers.splice(targetLayerIndex, 0, sourceLayer);
+                        
+                        Logger.info('dropped onto: ' + (<HTMLLIElement>event.target).id);
+                    }
+
+                    if (layerIndex === 0) {
+                        li.classList.add('active');
+                    }
+
+                    li.addEventListener('click', (event) => {
+                        this.container.querySelectorAll('li').forEach((li) => {
+                            li.classList.remove('active');
+                        });
+
+                        li.classList.add('active');
+
+                        Application.instance.graphics.canvas.editorRenderer.currentLayer = layer;
+                    })
     
                     li.querySelector('.layer-name').innerHTML = layer.name;
     
                     li.querySelector('.btn-toggle-layer').addEventListener('click', (event) => {
-                        console.log('testtest');
-                        
                         layer.enabled = !layer.enabled;
+
+                        let icon = (<HTMLSpanElement>event.currentTarget).querySelector('i');
+
+                        if (layer.enabled) {
+                            icon.classList.remove('fa-eye-slash');
+                            icon.classList.add('fa-eye');
+                        }
+                        else {
+                            icon.classList.remove('fa-eye');
+                            icon.classList.add('fa-eye-slash');
+                        }
+                    });
+
+                    li.querySelector('.btn-lock-layer').addEventListener('click', (event) => {
+                        layer.locked = !layer.locked;
+
+                        let icon = (<HTMLSpanElement>event.currentTarget).querySelector('i');
+
+                        if (layer.locked) {
+                            icon.classList.remove('fa-unlock');
+                            icon.classList.add('fa-lock');
+                        }
+                        else {
+                            icon.classList.remove('fa-lock');
+                            icon.classList.add('fa-unlock');
+                        }
                     });
     
                     li.querySelector('.btn-remove-layer').addEventListener('click', (event) => {

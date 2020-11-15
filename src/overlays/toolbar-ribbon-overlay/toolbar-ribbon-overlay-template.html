@@ -1,3 +1,17 @@
 <div class="overlay-template">
-    <button type="button" class="btn-selection-mode">Select</button>
+    <button type="button" class="btn-toolbar-item btn-selection-mode" data-editor-mode="1">Select</button>
+    <button type="button" class="btn-toolbar-item btn-stamp-mode" data-editor-mode="2">Stamp</button>
+    <button type="button" class="btn-toolbar-item btn-shape-fill-mode" data-editor-mode="3">Shape Fill</button>
+    <button type="button" class="btn-toolbar-item btn-bucket-fill-mode" data-editor-mode="4">Bucket Fill</button>
+    <button type="button" class="btn-toolbar-item btn-select-same-tile-mode" data-editor-mode="5">Select Same Tile</button>
+
+    <hr>
+
+    <button type="button" class="btn-toolbar-action btn-highlight-current-layer">Toggle layer highlight</button>
 </div>
+
+<style>
+    button {
+        margin-bottom: 10px;
+    }
+</style>

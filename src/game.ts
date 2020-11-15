@@ -8,6 +8,7 @@ export default class Game {
     configuration: Configuration = new Configuration();
     graphics: Graphics = new Graphics();
     stateManager: StateManager = new StateManager();
+    isLoading: boolean = false;
 
     /**
      * Actually begins the game instance. Processes the configuration.
@@ -20,6 +21,15 @@ export default class Game {
         HtmlOverlayUtility.initOverlays();
 
         // Get tilesets.
+        fetch('./maps/sample-layers.json').then((response) => response.json()).then((map) => {
+            this.graphics.canvas.layers = map;
+            this.graphics.canvas.editorRenderer.currentLayer = this.graphics.canvas.layers[0];
+            this.isLoading = false;
+        });
+
+        while(this.isLoading) {
+            continue;
+        }
 
         // Initialize the first iteration of the gameloop.
         window.requestAnimationFrame((time: number) => this.gameLoop(time));

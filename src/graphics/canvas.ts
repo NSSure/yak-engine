@@ -1,4 +1,5 @@
 import Application from "../application";
+import { EditorMode } from "../enums/EditorMode";
 import currentViewportGridCoordinates from "../helpers/current-viewport-grid-square";
 import isCoordinateContained from "../helpers/is-coordinate-contained";
 import isTransformEmpty from "../helpers/is-transform-empty";
@@ -70,19 +71,9 @@ export default class Canvas {
     public gridCoordinates: Point;
 
     /**
-     * Flag to determine if the canvas context menu is open.
-     */
-    public isContextMenuOpen: boolean = false;
-
-    /**
      * Flag to determine if the mouse is down (specifcally left mouse clicks).
      */
     public isMouseDown: boolean = false;
-
-    /**
-     * The context menu DOM element.
-     */
-    public currentContextMenu: HTMLDivElement;
 
     /**
      * Flag to determine if the canvas has selection mode enabled.
@@ -100,14 +91,12 @@ export default class Canvas {
      * and bootstraps the canvas events.
      */
     constructor() {
-        this.layers.push(new Layer("Default"));
+        // this.layers.push(new Layer("Default"));
+
+        // this.editorRenderer.currentLayer = this.layers[0];
 
         // Ensure we resize the canvas here.
         this.resizeCanvas();
-
-        this.engineCanvas.addEventListener('keydown', (event: KeyboardEvent) => {
-            console.log(event);
-        });
 
         this.engineCanvas.addEventListener('mousedown', (event) => this.onCanvasMouseDown(event));
         this.engineCanvas.addEventListener('mouseup', (event) => this.onCanvasMouseUp(event));
@@ -115,54 +104,7 @@ export default class Canvas {
         this.engineCanvas.addEventListener('mouseenter', (event) => this.onCanvasEnter(event));
         this.engineCanvas.addEventListener('mouseleave', (event) => this.onCanvasLeave(event));
 
-        this.engineCanvas.addEventListener('focusout', (event) => {
-            if (this.isContextMenuOpen) {
-                this.isContextMenuOpen = false;
-                document.body.removeChild(this.currentContextMenu);
-            }
-        })
-
-        // fetch('./maps/sample-sprite-map-v2-large.json').then((response) => response.json()).then((map) => {
-        //     this.fragments.spriteFragments = this.fragments.spriteFragments.concat(map);
-        // });
-
         // TODO: Move this it should not be here.
-        this.engineCanvas.oncontextmenu = (event) => {
-            event.preventDefault();
-
-            // Can't open context menu when in selection mode. The menu is opened after the selection is made.
-            if (this.isSelectionMode) {
-                return;
-            }
-
-            this.fragments.spriteFragments.some((sprite: Sprite) => {
-                if (isCoordinateContained(this.mousePosition, sprite.transform)) {
-                    event.preventDefault();
-                    this.openContextMenu(new Point(sprite.transform.x, sprite.transform.y));
-                }
-            });
-        }
-    }
-
-    openContextMenu(transformCoordinates: Point): void {
-        if (this.isContextMenuOpen) {
-            document.body.removeChild(this.currentContextMenu);
-        }
-
-        Application.instance.stateManager.delete('pending-sprite-image');
-
-        this.isContextMenuOpen = true;
-
-        this.currentContextMenu = document.createElement('div');
-
-        this.currentContextMenu.classList.add('engine-context-menu');
-        this.currentContextMenu.style.position = 'absolute';
-        this.currentContextMenu.style.top = `${transformCoordinates.y + Application.instance.configuration.gridSquareSize}px`;
-        this.currentContextMenu.style.left = `${transformCoordinates.x + Application.instance.configuration.gridSquareSize}px`;
-
-        this.currentContextMenu.innerHTML = Application.contextMenuTemplate;
-
-        document.body.appendChild(this.currentContextMenu);
     }
 
     /**
@@ -233,17 +175,7 @@ export default class Canvas {
     onCanvasMouseDown(event: MouseEvent): void {
         if (event.button === 0) {
             this.isMouseDown = true;
-
             this.uiFragmentsRender.isHoveredFragmentClicked(this.mousePosition);
-
-            if (this.isContextMenuOpen) {
-                this.isContextMenuOpen = false;
-                document.body.removeChild(this.currentContextMenu);
-            }
-    
-            if (this.isSelectionMode) {
-                this.selectionTransform = Transform.empty;
-            }
         }
     }
 
@@ -277,7 +209,7 @@ export default class Canvas {
                 Logger.data(this.selectionTransform);
 
                 if (this.isSelectionMode) {
-                    this.openContextMenu(new Point(this.mousePosition.x, this.mousePosition.y));
+                    // this.openContextMenu(new Point(this.mousePosition.x, this.mousePosition.y));
                 }
             }
         }
@@ -286,11 +218,11 @@ export default class Canvas {
     }
 
     onCanvasMouseMove(event: MouseEvent): void {
-        this.mousePosition = new Point(event.clientX, event.clientY);
+        this.mousePosition = new Point(event.pageX, event.pageY);
 
         this.gridCoordinates = currentViewportGridCoordinates(this.mousePosition);
 
-        if (this.isSelectionMode && this.isMouseDown) {
+        if ((this.editorRenderer.editorMode == EditorMode.SELECTION || this.editorRenderer.editorMode == EditorMode.SHAPE_FILL) && EditorMode.SHAPE_FILL && this.isMouseDown) {
             if (isTransformEmpty(this.selectionTransform)) {
                 this.selectionTransform = new Transform(this.gridCoordinates.x * Application.instance.configuration.gridSquareSize, this.gridCoordinates.y * Application.instance.configuration.gridSquareSize, 0, 0);
             }

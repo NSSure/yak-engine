@@ -2,6 +2,9 @@ import HtmlOverlay from "../html-overlay";
 import { OverlayPosition } from "../overlay-position";
 import { HtmlOverlayDecorator } from '../../decorators/html-overlay-decorator';
 import Application from "../../application";
+import { EditorMode } from "../../enums/EditorMode";
+import { Logger } from "../../logging/logger";
+import Layer from "../../graphics/layer";
 
 @HtmlOverlayDecorator({
     name: 'toolbar-ribbon',
@@ -14,26 +17,50 @@ export default class ToolbarRibbonOverlay extends HtmlOverlay {
     overlayPosition = OverlayPosition.TOP_RIGHT;
     isMoveable: boolean = true;
 
-    bootstrap() {
-        let btnSelectionMode = document.querySelector('.btn-selection-mode');
+    btnToolbarItems: NodeListOf<HTMLButtonElement>;
 
-        if (Application.instance.graphics.canvas.isSelectionMode) {
-            btnSelectionMode.classList.add('active');
+    bootstrap() {
+        this.btnToolbarItems = <NodeListOf<HTMLButtonElement>>this.container.querySelectorAll('.btn-toolbar-item');
+
+        if (this.btnToolbarItems) {
+            this.btnToolbarItems.forEach((btnToolbarItem: HTMLButtonElement) => {
+                btnToolbarItem.addEventListener('click', (event) => {
+                    let mode = <EditorMode>parseInt(btnToolbarItem.dataset.editorMode);
+    
+                    if (Application.instance.graphics.canvas.editorRenderer.editorMode === mode) {
+                        btnToolbarItem.classList.remove('active');
+                        Application.instance.graphics.canvas.editorRenderer.editorMode = EditorMode.NONE;
+                    }
+                    else {
+                        Application.instance.graphics.canvas.editorRenderer.editorMode = mode;
+    
+                        this.btnToolbarItems.forEach((otherItem: HTMLButtonElement) => {
+                            otherItem.classList.remove('active');
+                        });
+    
+                        btnToolbarItem.classList.add('active');
+                    }
+                });
+            });
         }
 
-        btnSelectionMode.addEventListener('click', (event) => {
-            Application.instance.graphics.canvas.toggleSelectionMode(!Application.instance.graphics.canvas.isSelectionMode);
+        let btnHighlightLayer = this.container.querySelector('.btn-highlight-current-layer');
 
-            if (Application.instance.graphics.canvas.isSelectionMode) {
-                btnSelectionMode.classList.add('active');
-            }
-            else {
-                btnSelectionMode.classList.remove('active');
-            }
+        btnHighlightLayer.addEventListener('click', (event) => {
+            Application.instance.graphics.canvas.editorRenderer.highlightCurrentLayer = !Application.instance.graphics.canvas.editorRenderer.highlightCurrentLayer;
         });
     }
 
     sync() {
-
+        // Remove the active state from the toolbar item if it is not the active mode.
+        if (this.btnToolbarItems) {
+            this.btnToolbarItems.forEach((btnToolbarItem: HTMLButtonElement) => {
+                let mode = <EditorMode>parseInt(btnToolbarItem.dataset.editorMode);
+    
+                if (Application.instance.graphics.canvas.editorRenderer.editorMode !== mode) {
+                    btnToolbarItem.classList.remove('active');
+                }
+            });
+        }
     }
 }
