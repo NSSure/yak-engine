@@ -1,18 +1,16 @@
-import Application from "../../application";
-import isCanvasBlank from "../../helpers/is-canvas-empty";
-import HtmlOverlay from "../html-overlay";
-import { OverlayPosition } from "../overlay-position";
-import { HtmlOverlayDecorator } from '../../decorators/html-overlay-decorator';
-import Sprite from "../../graphics/sprite";
-import Transform from "../../primitives/transform";
-import EditorImageSource from "../../graphics/editor-image-source";
-import { Logger } from "../../logging/logger";
-import Tileset from "../../graphics/tileset";
-import Point from "../../primitives/Point";
+import Application from "../../../application";
+import isCanvasBlank from "../../../helpers/is-canvas-empty";
+import HtmlOverlay from "../../html-overlay";
+import { OverlayPosition } from "../../overlay-position";
+import { HtmlOverlayDecorator } from '../../../decorators/html-overlay-decorator';
+import Sprite from "../../../graphics/sprite";
+import Transform from "../../../primitives/transform";
+import { Logger } from "../../../logging/logger";
+import Tileset from "../../../graphics/tileset";
 
 @HtmlOverlayDecorator({
     name: 'sprite-editor',
-    templateUrl: './overlays/src/overlays/sprite-editor-overlay/sprite-editor-overlay-template.html',
+    templateUrl: './overlays/src/editor/panes/sprite-editor-overlay/sprite-editor-overlay-template.html',
 })
 export default class SpriteEditorOverlay extends HtmlOverlay {
     title: string = 'Sprite Editor';

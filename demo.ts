@@ -1,9 +1,9 @@
 import Application from "./src/application";
-import EngineStatsOverlay from "./src/overlays/engine-stats-overlay";
-import FragmentsOverlay from "./src/overlays/ui-fragments-overlay";
-import SpriteEditorOverlay from "./src/overlays/sprite-editor-overlay/sprite-editor-overlay";
-import LayerEditorOverlay from "./src/overlays/layer-editor-overlay/layer-editor-overlay";
-import ToolbarRibbonOverlay from "./src/overlays/toolbar-ribbon-overlay/toolbar-ribbon-overlay";
+import EngineStatsOverlay from "./src/editor/engine-stats-overlay";
+import LayerEditorOverlay from "./src/editor/panes/layer-editor-overlay/layer-editor-overlay";
+import SpriteEditorOverlay from "./src/editor/panes/sprite-editor-overlay/sprite-editor-overlay";
+import ToolbarRibbonOverlay from "./src/editor/panes/toolbar-ribbon-overlay/toolbar-ribbon-overlay";
+import FragmentsOverlay from "./src/editor/ui-fragments-overlay";
 
 export default class Demo extends Application {
     constructor() {

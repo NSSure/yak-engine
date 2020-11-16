@@ -52,7 +52,7 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         {
-          from: './src/overlays/**/*.html',
+          from: './src/editor/panes/**/*.html',
           to: 'overlays',
         }
       ],

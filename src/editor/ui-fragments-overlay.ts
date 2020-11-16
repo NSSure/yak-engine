@@ -12,7 +12,7 @@ import { OverlayPosition } from "./overlay-position";
 export default class FragmentsOverlay extends HtmlOverlay {
     title: string = 'Fragments';
     order: number = 30;
-    isEnabled: boolean = true;
+    isEnabled: boolean = false;
     overlayPosition = OverlayPosition.TOP_RIGHT;
     isMoveable: boolean = true;
 

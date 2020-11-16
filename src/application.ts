@@ -1,7 +1,11 @@
 import Game from './game';
 
+import ToolbarPane from './editor/toolbar-pane';
+
 export default class Application {
     static instance: Game;
+
+    t: ToolbarPane = new ToolbarPane();
 
     get instance(): Game { 
         return Application.instance;

@@ -1,19 +1,17 @@
-import HtmlOverlay from "../html-overlay";
-import { OverlayPosition } from "../overlay-position";
-import { HtmlOverlayDecorator } from '../../decorators/html-overlay-decorator';
-import Application from "../../application";
-import { EditorMode } from "../../enums/EditorMode";
-import { Logger } from "../../logging/logger";
-import Layer from "../../graphics/layer";
+import HtmlOverlay from "../../html-overlay";
+import { OverlayPosition } from "../../overlay-position";
+import { HtmlOverlayDecorator } from '../../../decorators/html-overlay-decorator';
+import Application from "../../../application";
+import { EditorMode } from "../../../enums/EditorMode";
 
 @HtmlOverlayDecorator({
     name: 'toolbar-ribbon',
-    templateUrl: './overlays/src/overlays/toolbar-ribbon-overlay/toolbar-ribbon-overlay-template.html',
+    templateUrl: './overlays/src/editor/panes/toolbar-ribbon-overlay/toolbar-ribbon-overlay-template.html',
 })
 export default class ToolbarRibbonOverlay extends HtmlOverlay {
     title: string = 'Toolbar';
     order: number = 0;
-    isEnabled: boolean = true;
+    isEnabled: boolean = false;
     overlayPosition = OverlayPosition.TOP_RIGHT;
     isMoveable: boolean = true;
 

@@ -1,5 +1,6 @@
 import Application from "../application";
 import { EditorMode } from "../enums/EditorMode";
+import areTransformsEqual from "../helpers/are-transforms-equal";
 import currentViewportGridCoordinates from "../helpers/current-viewport-grid-square";
 import isCoordinateContained from "../helpers/is-coordinate-contained";
 import isTransformEmpty from "../helpers/is-transform-empty";
@@ -91,9 +92,8 @@ export default class Canvas {
      * and bootstraps the canvas events.
      */
     constructor() {
-        // this.layers.push(new Layer("Default"));
-
-        // this.editorRenderer.currentLayer = this.layers[0];
+        this.layers.push(new Layer("Default"));
+        this.editorRenderer.currentLayer = this.layers[0];
 
         // Ensure we resize the canvas here.
         this.resizeCanvas();
@@ -146,8 +146,8 @@ export default class Canvas {
      */
     resizeCanvas(): void {
         if (this.getCanvasWidth() !== window.innerWidth || this.getCanvasHeight() !== window.innerHeight) {
-            this.setCanvasWidth(window.innerWidth);
-            this.setCanvasHeight(window.innerHeight);
+            // this.setCanvasWidth(window.innerWidth);
+            // this.setCanvasHeight(window.innerHeight);
         }
     }
 
@@ -218,7 +218,8 @@ export default class Canvas {
     }
 
     onCanvasMouseMove(event: MouseEvent): void {
-        this.mousePosition = new Point(event.pageX, event.pageY);
+        this.mousePosition = new Point(event.offsetX, event.offsetY);
+        // this.pageMousePosition = new Point(event.clientX, event.clientY);
 
         this.gridCoordinates = currentViewportGridCoordinates(this.mousePosition);
 

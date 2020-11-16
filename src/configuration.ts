@@ -1,4 +1,4 @@
-import HtmlOverlay from "./overlays/html-overlay";
+import HtmlOverlay from "./editor/html-overlay";
 
 /**
  * Contains configuration options for the game instance.
@@ -47,5 +47,8 @@ export default class Configuration {
      */
     selectionTransformFill: string = 'rgba(252,248,227, 0.7)';
 
-
+    /**
+     * Global alpha of 0.5;
+     */
+    highlightFill: string = '#007ACC';
 }

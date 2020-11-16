@@ -1,13 +1,13 @@
-import Application from "../../application";
-import HtmlOverlay from "../html-overlay";
-import { OverlayPosition } from "../overlay-position";
-import { HtmlOverlayDecorator } from '../../decorators/html-overlay-decorator';
-import Layer from "../../graphics/layer";
-import { Logger } from "../../logging/logger";
+import Application from "../../../application";
+import HtmlOverlay from "../../html-overlay";
+import { OverlayPosition } from "../../overlay-position";
+import { HtmlOverlayDecorator } from '../../../decorators/html-overlay-decorator';
+import Layer from "../../../graphics/layer";
+import { Logger } from "../../../logging/logger";
 
 @HtmlOverlayDecorator({
     name: 'layer-editor',
-    templateUrl: './overlays/src/overlays/layer-editor-overlay/layer-editor-overlay-template.html',
+    templateUrl: './overlays/src/editor/panes/layer-editor-overlay/layer-editor-overlay-template.html',
 })
 export default class LayerEditorOverlay extends HtmlOverlay {
     title: string = 'Layer Editor';
@@ -36,6 +36,8 @@ export default class LayerEditorOverlay extends HtmlOverlay {
         }
     }
 
+    currentLi: HTMLLIElement;
+
     sync() {
         if (this.ul) {
             Application.instance.graphics.canvas.layers.forEach((layer: Layer, layerIndex: number) => {
@@ -49,29 +51,41 @@ export default class LayerEditorOverlay extends HtmlOverlay {
 
                     li.ondragstart = (event: DragEvent) => {
                         event.dataTransfer.setData('text/plain', layerIndex.toString());
+                        this.currentLi = li;
                     };
 
                     li.ondragenter = (event: DragEvent) => {
                         event.preventDefault();
                     }
 
+                    li.ondragleave = (event: DragEvent) => {
+                        event.preventDefault();
+                        let target = (<HTMLLIElement>event.target);
+                        target.style.border = 'none';
+                    }
+
                     li.ondragover = (event: DragEvent) => {
                         event.preventDefault();
-                        Logger.info('I was just dragged on: ' + layer.id);
 
-                        let target = (<HTMLLIElement>event.target);
-                        
-                        let top = target.getBoundingClientRect().top;
-                        let half = target.getBoundingClientRect().top + (target.clientHeight / 2);
+                        let target = (<HTMLLIElement>event.currentTarget);
 
-                        if (event.clientY > top && event.clientY < half) {
-                            target.style.borderTop = '2px solid yellow';
-                        }
-                        else if (event.clientY > top && event.clientY > half && event.clientY < (top + target.clientHeight)) {
-                            target.style.borderBottom = '2px solid yellow';
-                        }
-                        else {
-                            Logger.info('math is hard');
+                        if (this.currentLi.id !== target.id) {
+                            Logger.info('I was just dragged on: ' + layer.id);
+
+                            let top = target.getBoundingClientRect().top;
+                            let half = target.getBoundingClientRect().top + (target.clientHeight / 2);
+    
+                            if (event.clientY > top && event.clientY < half) {
+                                target.style.borderTop = '2px solid yellow';
+                                target.style.borderBottom = 'none';
+                            }
+                            else if (event.clientY > top && event.clientY > half && event.clientY < (top + target.clientHeight)) {
+                                target.style.borderBottom = '2px solid yellow';
+                                target.style.borderTop = 'none';
+                            }
+                            else {
+                                Logger.info('math is hard');
+                            }
                         }
                     }
 

@@ -15,9 +15,9 @@
 	- [x] Shape fill
 		- [ ] Implement in renderer
 	- [ ] Bucket fill
-	- [-] Select same tile
-		- [ ] When moving mouse slowly the highlighting does not work
-	- [ ] Eraser
+	- [x] Select same tile
+		- [x] When moving mouse slowly the highlighting does not work
+	- [-] Eraser
 - [ ] Extend layer editing functionality
 	- [x] Add a way to set the current layer for editor renderer
 	- [x] Ensure the toolbar item actions apply to the current layer
@@ -25,8 +25,9 @@
 	- [x] Add the ability to lock layers
 	- [x] Highlight current layer (LOOK INTO REFACTOR)
 		- [x] Add layer opacity
-	- [ ] Add the ability to re-order layers
+	- [x] Add the ability to re-order layers
 	- [ ] Duplicate layer
+	- [ ] Delete layer
 - [ ] When in selection mode if the context menu is open any actions should apply to the selection area
 	- [ ] Add bucket fill
 	- [ ] Delete selection
@@ -38,12 +39,26 @@
 	- [ ] Move selection to front
 	- [ ] Flip selection by x
 	- [ ] Flip selection by y
-
+- [ ] Add the ability to specify new tilesets
+	- [ ] Add the ability to open a dialog from the file dropdown in the main menu
+- [ ] Add the ability to scroll the canvas area for larger size canvases
+- [ ] Add the ability to create new maps
+	- [ ] Add the ability to open a dialog from the file dropdown in the main menu
+		- [ ] Allow to set specific map dimensions
+		- [ ] Allow for infinite map dimensions
+- [ ] Add sprite inspector for when sprites in the canvas are clicked.
+	- [ ] Display transform
+	- [ ] Display tileset
+	- [ ] Display tileset transform
 
 # Current bugs
 - [ ] In selection mode when filling an area with sprites you can only go from top left to bottom right
+- [ ] You can add a layer without a name
+- [ ] In select same tile mode if two sprites on on the same coordinates the background tile is the only accessible tile
+	need to loop backwards through the tiles when looking for selection highlights
+- [ ] In shape file you can't fill the origin of the canvas
 
 # Need to be done at some point
 - [ ] Add state manager overlay to enable browsing the current state
 - [ ] Implement Sass for the default styles
-- [ ] Ensure the load order works for all the other overlay positions
+- [ ] Ensure the load order works for all the other overlay positions 

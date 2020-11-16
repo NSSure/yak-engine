@@ -2,6 +2,7 @@ import Application from "../../application";
 import { EditorMode } from "../../enums/EditorMode";
 import areTransformsEqual from "../../helpers/are-transforms-equal";
 import fillTransform from "../../helpers/fill-transform";
+import fillTransparentRect from "../../helpers/fill-transparent-rect";
 import isCoordinateContained from "../../helpers/is-coordinate-contained";
 import { Logger } from "../../logging/logger";
 import Point from "../../primitives/Point";
@@ -34,7 +35,7 @@ export default class EditorRenderer {
 
     public selectedSprites: Array<Sprite> = new Array();
     
-    public lastHoveredSprite: Sprite;
+    public hoveredSprite: Sprite;
 
     constructor(canvas: Canvas) {
         this.canvas = canvas;
@@ -58,6 +59,143 @@ export default class EditorRenderer {
         this.canvas.engineCanvas.addEventListener('mouseup', (event) => this.onCanvasMouseUp(event));
     }
 
+    run(): void {
+        this.drawGridLines();
+        this.drawSelectionTransform();
+        this.drawSpritePreview();
+
+        // TODO: Move this.
+        if (!this.currentLayer.locked) {
+            if (this.editorMode === EditorMode.ERASER && this.canvas.isMouseDown) {
+                let spriteIndex = this.currentLayer.sprites.findIndex(sprite => isCoordinateContained(this.canvas.mousePosition, sprite.transform));
+    
+                if (spriteIndex !== -1) {
+                    this.currentLayer.sprites.splice(spriteIndex, 1);
+                }
+            }
+    
+            // TODO: This is just test code.
+            if (this.editorMode === EditorMode.SELECT_SAME_TILE) {
+                let sprite = this.currentLayer.sprites.find(sprite => isCoordinateContained(this.canvas.mousePosition, sprite.transform));
+    
+                if (!sprite) {
+                    this.selectedSprites = new Array();
+                    this.hoveredSprite = null;
+                }
+                else {
+                    if (!this.hoveredSprite || !areTransformsEqual(sprite.tilesetTransform, this.hoveredSprite.tilesetTransform)) {
+                        this.hoveredSprite = sprite;
+                        this.selectedSprites = this.currentLayer.sprites.filter((sprite) => areTransformsEqual(this.hoveredSprite.tilesetTransform, sprite.tilesetTransform));
+                    }
+                }
+            }
+        }
+
+        this.highlightSelectedSprites();
+    }
+
+    /**
+     * 
+     */
+    highlightSelectedSprites(): void {
+        if (this.selectedSprites && this.selectedSprites.length > 0) {
+            this.selectedSprites.forEach((selectedSprite: Sprite) => fillTransparentRect(this.canvas.context, selectedSprite.transform));
+        }
+    }
+
+    /**
+     * 
+     * @param transformCoordinates 
+     */
+    openContextMenu(transformCoordinates: Point): void {
+        if (this.isContextMenuOpen) {
+            document.body.removeChild(this.currentContextMenu);
+        }
+
+        Application.instance.stateManager.delete('pending-sprite-image');
+
+        this.isContextMenuOpen = true;
+
+        this.currentContextMenu = document.createElement('div');
+
+        this.currentContextMenu.classList.add('engine-context-menu');
+        this.currentContextMenu.style.position = 'absolute';
+        this.currentContextMenu.style.top = `${transformCoordinates.y + Application.instance.configuration.gridSquareSize}px`;
+        this.currentContextMenu.style.left = `${transformCoordinates.x + Application.instance.configuration.gridSquareSize}px`;
+
+        this.currentContextMenu.innerHTML = Application.contextMenuTemplate;
+
+        document.body.appendChild(this.currentContextMenu);
+    }
+
+    /**
+     * 
+     */
+    drawGridLines(): void {
+        this.canvas.context.globalAlpha = 1;
+
+        let spriteCountX = this.canvas.getCanvasWidth() / Application.instance.configuration.gridSquareSize;
+        let spriteCountY = this.canvas.getCanvasHeight() / Application.instance.configuration.gridSquareSize;
+
+        for (let column = 0; column < spriteCountX; column++) {
+            this.canvas.context.beginPath(); 
+            this.canvas.context.lineWidth = Application.instance.configuration.editorGridThickness;
+            this.canvas.context.strokeStyle = Application.instance.configuration.editorGridFill;
+            this.canvas.context.moveTo(column * Application.instance.configuration.gridSquareSize, 0);
+            this.canvas.context.lineTo(column * Application.instance.configuration.gridSquareSize, this.canvas.getCanvasHeight());
+            this.canvas.context.stroke();
+            this.canvas.context.closePath();
+        }
+
+        for (let row = 0; row < spriteCountY; row++) {
+            this.canvas.context.beginPath(); 
+            this.canvas.context.lineWidth = Application.instance.configuration.editorGridThickness;
+            this.canvas.context.strokeStyle = Application.instance.configuration.editorGridFill;
+            this.canvas.context.moveTo(0, row * Application.instance.configuration.gridSquareSize);
+            this.canvas.context.lineTo(this.canvas.getCanvasWidth(), row * Application.instance.configuration.gridSquareSize);
+            this.canvas.context.stroke();
+            this.canvas.context.closePath();
+        }
+    }
+
+    /**
+     * 
+     */
+    drawSelectionTransform(): void {
+        if (this.editorMode === EditorMode.SELECTION || this.editorMode === EditorMode.SHAPE_FILL) {
+            fillTransform(this.canvas.context, this.canvas.selectionTransform);
+        }
+    }
+
+    /**
+     * Rename this is draw hover preview. This will render an image instead of from a tileset.
+     */
+    drawSpritePreview(): void {
+        if (this.editorMode == EditorMode.STAMP) {
+        let pendingSpite = Application.instance.stateManager.get<Sprite>('pending-sprite');
+
+            if (pendingSpite) {
+                Logger.data(pendingSpite);
+
+                this.canvas.context.drawImage(
+                    this.canvas.tilesets[0].image,
+                     pendingSpite.transform.x * Application.instance.configuration.gridSquareSize, 
+                     pendingSpite.transform.y * Application.instance.configuration.gridSquareSize,
+                     Application.instance.configuration.gridSquareSize, 
+                     Application.instance.configuration.gridSquareSize,
+                     this.canvas.gridCoordinates.x * Application.instance.configuration.gridSquareSize,
+                     this.canvas.gridCoordinates.y * Application.instance.configuration.gridSquareSize,
+                     Application.instance.configuration.gridSquareSize,
+                     Application.instance.configuration.gridSquareSize,
+                );
+            }
+        }
+    }
+
+    /**
+     * 
+     * @param event 
+     */
     onCanvasContextMenu(event: MouseEvent): void {
         event.preventDefault();
 
@@ -131,117 +269,6 @@ export default class EditorRenderer {
             }
 
             this.canvas.selectionTransform = Transform.empty;
-        }
-    }
-
-    run(): void {
-        this.drawGridLines();
-        this.drawSelectionTransform();
-        this.drawSpritePreview();
-
-        // TODO: This is just test code.
-        if (this.editorMode === EditorMode.SELECT_SAME_TILE) {
-            // this.canvas.context.fillStyle = 'red';
-            // this.canvas.context.fillRect(this.canvas.gridCoordinates.x * 32, this.canvas.gridCoordinates.y * 32, 32, 32);
-
-            // let test = new Point(this.canvas.gridCoordinates.x * 32, this.canvas.gridCoordinates.y * 32);
-            let hoveredSprite = this.currentLayer.sprites.find(sprite => isCoordinateContained(this.canvas.mousePosition, sprite.transform));
-
-            if (hoveredSprite) {
-                if (!this.lastHoveredSprite || !areTransformsEqual(hoveredSprite.transform, this.lastHoveredSprite.transform)) {
-                    this.selectedSprites = this.currentLayer.sprites.filter((sprite) => areTransformsEqual(hoveredSprite.tilesetTransform, sprite.tilesetTransform));
-                }
-
-                this.lastHoveredSprite = hoveredSprite;
-            }
-            else {
-                this.selectedSprites = new Array();
-            }
-
-            this.selectedSprites.forEach((selectedSprite: Sprite) => {
-                this.canvas.context.fillStyle = '#007ACC';
-                this.canvas.context.globalAlpha = 0.50;
-                this.canvas.context.fillRect(selectedSprite.transform.x, selectedSprite.transform.y, 32, 32);
-                this.canvas.context.globalAlpha = 1;
-            });
-        }
-    }
-
-    openContextMenu(transformCoordinates: Point): void {
-        if (this.isContextMenuOpen) {
-            document.body.removeChild(this.currentContextMenu);
-        }
-
-        Application.instance.stateManager.delete('pending-sprite-image');
-
-        this.isContextMenuOpen = true;
-
-        this.currentContextMenu = document.createElement('div');
-
-        this.currentContextMenu.classList.add('engine-context-menu');
-        this.currentContextMenu.style.position = 'absolute';
-        this.currentContextMenu.style.top = `${transformCoordinates.y + Application.instance.configuration.gridSquareSize}px`;
-        this.currentContextMenu.style.left = `${transformCoordinates.x + Application.instance.configuration.gridSquareSize}px`;
-
-        this.currentContextMenu.innerHTML = Application.contextMenuTemplate;
-
-        document.body.appendChild(this.currentContextMenu);
-    }
-
-    drawGridLines(): void {
-        this.canvas.context.globalAlpha = 1;
-
-        let spriteCountX = this.canvas.getCanvasWidth() / Application.instance.configuration.gridSquareSize;
-        let spriteCountY = this.canvas.getCanvasHeight() / Application.instance.configuration.gridSquareSize;
-
-        for (let column = 0; column < spriteCountX; column++) {
-            this.canvas.context.beginPath(); 
-            this.canvas.context.lineWidth = Application.instance.configuration.editorGridThickness;
-            this.canvas.context.strokeStyle = Application.instance.configuration.editorGridFill;
-            this.canvas.context.moveTo(column * Application.instance.configuration.gridSquareSize, 0);
-            this.canvas.context.lineTo(column * Application.instance.configuration.gridSquareSize, this.canvas.getCanvasHeight());
-            this.canvas.context.stroke();
-            this.canvas.context.closePath();
-        }
-
-        for (let row = 0; row < spriteCountY; row++) {
-            this.canvas.context.beginPath(); 
-            this.canvas.context.lineWidth = Application.instance.configuration.editorGridThickness;
-            this.canvas.context.strokeStyle = Application.instance.configuration.editorGridFill;
-            this.canvas.context.moveTo(0, row * Application.instance.configuration.gridSquareSize);
-            this.canvas.context.lineTo(this.canvas.getCanvasWidth(), row * Application.instance.configuration.gridSquareSize);
-            this.canvas.context.stroke();
-            this.canvas.context.closePath();
-        }
-    }
-
-    drawSelectionTransform(): void {
-        if (this.editorMode === EditorMode.SELECTION || this.editorMode === EditorMode.SHAPE_FILL) {
-            fillTransform(this.canvas.context, this.canvas.selectionTransform);
-        }
-    }
-
-    floodSelectionTransform(): void {
-
-    }
-
-    drawSpritePreview(): void {
-        if (this.editorMode == EditorMode.STAMP) {
-            let pendingSpite = Application.instance.stateManager.get<Sprite>('pending-sprite');
-
-            if (pendingSpite) {
-                this.canvas.context.drawImage(
-                    this.canvas.tilesets[0].image,
-                     pendingSpite.transform.x * Application.instance.configuration.gridSquareSize, 
-                     pendingSpite.transform.y * Application.instance.configuration.gridSquareSize,
-                     Application.instance.configuration.gridSquareSize, 
-                     Application.instance.configuration.gridSquareSize,
-                     this.canvas.gridCoordinates.x * Application.instance.configuration.gridSquareSize,
-                     this.canvas.gridCoordinates.y * Application.instance.configuration.gridSquareSize,
-                     Application.instance.configuration.gridSquareSize,
-                     Application.instance.configuration.gridSquareSize,
-                );
-            }
         }
     }
 }

@@ -31,6 +31,7 @@ export default abstract class HtmlOverlay extends Entity {
 
     constructor() {
         super();
+        Logger.data(HtmlOverlay.topRightContainer);
     }
 
     public init(): void {

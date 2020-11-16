@@ -1,7 +1,5 @@
 import Application from "../application";
-import { Logger } from "../logging/logger";
 import HtmlOverlay from "./html-overlay";
-import { OverlayPosition } from "./overlay-position";
 
 const fieldSorter = (fields) => (a, b) => fields.map(o => {
     let dir = 1;
@@ -50,9 +48,6 @@ export default class HtmlOverlayUtility {
      */
     static initOverlays(): void {
         if (Application.instance.configuration.htmlOverlays) {
-            // let positionOverlays = Application.instance.configuration.htmlOverlays.filter((item) => item.overlayPosition === this.overlayPosition).sort((a, b) => {
-            //     return a.order - b.order;
-            // });
             let t = Application.instance.configuration.htmlOverlays.sort(fieldSorter(['overlayPosition', 'order']));
 
             t.forEach((overlay: HtmlOverlay) => {

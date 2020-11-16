@@ -10,9 +10,6 @@ export default class SpriteRenderer {
     canvas: Canvas;
     tileset = new Image();
 
-    spriteWidth: number = 32;
-    spriteHeight: number = 32;
-
     constructor(canvas: Canvas) {
         this.canvas = canvas;
 
@@ -51,6 +48,7 @@ export default class SpriteRenderer {
 
             if (layer.enabled) {
                 layer.sprites.forEach((sprite: Sprite) => {
+                    // TODO: Handle camera viewport.
                     this.canvas.context.drawImage(
                         this.tileset, 
                         sprite.tilesetTransform.x,
